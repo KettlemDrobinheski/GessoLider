@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
+import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomBar } from '@/components/home/bottom-bar';
@@ -27,7 +28,7 @@ export default function HomeScreen() {
 
           <View style={styles.grid}>
             <View style={styles.row}>
-              <ShortcutCard title="Novo Orçamento" icon={{ ios: 'doc.badge.plus', android: 'note_add', web: 'note_add' }} />
+              <ShortcutCard title="Novo Orçamento" icon={{ ios: 'doc.badge.plus', android: 'note_add', web: 'note_add' }} onPress={() => router.push('/orcamento/tipo-servico')} />
               <ShortcutCard title="Clientes" icon={{ ios: 'person.2', android: 'group', web: 'group' }} />
             </View>
             <View style={styles.row}>
