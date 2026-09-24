@@ -1,166 +1,108 @@
+﻿import { BrandLogo } from "@/components/brand-logo";
+import { Brand } from "@/constants/brand";
+import { Link } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function HomeScreen() {
+const benefits = [
+  "Calcule materiais",
+  "Monte orçamentos",
+  "Organize suas obras",
+  "Resultados precisos",
+];
+
+export default function SplashScreen() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.screen}>
       <StatusBar style="light" />
-
-      <View style={styles.content}>
-        <View style={styles.logo}>
-          <Text style={styles.logoRoof}>⌂</Text>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.container}>
+          <View style={styles.content}>
+            <BrandLogo light />
+            <Text style={styles.subtitle}>
+              Soluções em drywall{"\n"}para seus projetos
+            </Text>
+            <View style={styles.features}>
+              {benefits.map((benefit) => (
+                <View key={benefit} style={styles.feature}>
+                  <View style={styles.check}>
+                    <Text style={styles.checkText}>✓</Text>
+                  </View>
+                  <Text style={styles.featureText}>{benefit}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          <View style={styles.footer}>
+            <Link href="/login" asChild>
+              <Pressable
+                accessibilityRole="button"
+                style={styles.button}
+              >
+                <Text style={styles.buttonText}>Começar</Text>
+              </Pressable>
+            </Link>
+            <Text style={styles.footerText}>
+              Mais praticidade do{"\n"}planejamento à entrega.
+            </Text>
+          </View>
         </View>
-
-        <Text style={styles.name}>
-          Gesso<Text style={styles.nameAccent}>Lider</Text>
-        </Text>
-
-        <Text style={styles.subtitle}>
-          Soluções em drywall{"\n"}para seus projetos
-        </Text>
-
-        <View style={styles.features}>
-          <Feature text="Calcule materiais" />
-          <Feature text="Monte orçamentos" />
-          <Feature text="Organize suas obras" />
-          <Feature text="Resultados precisos" />
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.8}
-          onPress={() => {
-            console.log("Começar");
-          }}
-        >
-          <Text style={styles.buttonText}>Começar</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.footerText}>
-          Mais praticidade do{"\n"}planejamento à entrega.
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-function Feature({ text }: { text: string }) {
-  return (
-    <View style={styles.feature}>
-      <View style={styles.check}>
-        <Text style={styles.checkText}>✓</Text>
-      </View>
-
-      <Text style={styles.featureText}>{text}</Text>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: Brand.dark },
+  scroll: { flexGrow: 1, alignItems: "center" },
   container: {
-    flex: 1,
-    backgroundColor: "#123D35",
+    flexGrow: 1,
+    width: "100%",
+    maxWidth: 480,
     paddingHorizontal: 28,
-    paddingTop: 80,
-    paddingBottom: 40,
+    paddingVertical: 24,
   },
-
-  content: {
-    flex: 1,
-    justifyContent: "center",
-  },
-
-  logo: {
-    alignItems: "center",
-    marginBottom: 5,
-  },
-
-  logoRoof: {
-    color: "#FFFFFF",
-    fontSize: 75,
-    fontWeight: "300",
-  },
-
-  name: {
-    color: "#FFFFFF",
-    fontSize: 38,
-    fontWeight: "800",
-    textAlign: "center",
-    letterSpacing: -1,
-  },
-
-  nameAccent: {
-    color: "#55C59A",
-  },
-
+  content: { flexGrow: 1, justifyContent: "center", paddingVertical: 24 },
   subtitle: {
-    color: "#FFFFFF",
+    color: Brand.white,
     fontSize: 18,
     textAlign: "center",
     lineHeight: 26,
     marginTop: 12,
-    opacity: 0.9,
   },
-
-  features: {
-    marginTop: 50,
-    gap: 18,
-  },
-
-  feature: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 13,
-  },
-
+  features: { marginTop: 40, gap: 18, alignSelf: "center" },
+  feature: { flexDirection: "row", alignItems: "center", gap: 13 },
   check: {
     width: 24,
     height: 24,
     borderWidth: 1.5,
-    borderColor: "#FFFFFF",
+    borderColor: Brand.white,
     borderRadius: 5,
     alignItems: "center",
     justifyContent: "center",
   },
-
-  checkText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-
-  featureText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-  },
-
-  footer: {
-    gap: 18,
-  },
-
+  checkText: { color: Brand.white, fontSize: 16, fontWeight: "700" },
+  featureText: { color: Brand.white, fontSize: 16, flexShrink: 1 },
+  footer: { gap: 18, paddingTop: 24 },
   button: {
-    backgroundColor: "#087354",
-    height: 58,
+    width: "100%",
+    alignSelf: "center",
+    backgroundColor: Brand.primary,
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#40A987",
+    borderColor: Brand.accent,
   },
-
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-
+  buttonText: { color: Brand.white, fontSize: 18, fontWeight: "700", textAlign: "center" },
   footerText: {
-    color: "#FFFFFF",
+    color: Brand.white,
     textAlign: "center",
     fontSize: 14,
     lineHeight: 19,
-    opacity: 0.8,
   },
 });
