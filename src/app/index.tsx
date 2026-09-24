@@ -1,98 +1,166 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { StatusBar } from "expo-status-bar";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function HomeScreen() {
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <View style={styles.container}>
+      <StatusBar style="light" />
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+      <View style={styles.content}>
+        <View style={styles.logo}>
+          <Text style={styles.logoRoof}>⌂</Text>
+        </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        <Text style={styles.name}>
+          Gesso<Text style={styles.nameAccent}>Lider</Text>
+        </Text>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        <Text style={styles.subtitle}>
+          Soluções em drywall{"\n"}para seus projetos
+        </Text>
+
+        <View style={styles.features}>
+          <Feature text="Calcule materiais" />
+          <Feature text="Monte orçamentos" />
+          <Feature text="Organize suas obras" />
+          <Feature text="Resultados precisos" />
+        </View>
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.button}
+          activeOpacity={0.8}
+          onPress={() => {
+            console.log("Começar");
+          }}
+        >
+          <Text style={styles.buttonText}>Começar</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.footerText}>
+          Mais praticidade do{"\n"}planejamento à entrega.
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function Feature({ text }: { text: string }) {
+  return (
+    <View style={styles.feature}>
+      <View style={styles.check}>
+        <Text style={styles.checkText}>✓</Text>
+      </View>
+
+      <Text style={styles.featureText}>{text}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    backgroundColor: "#123D35",
+    paddingHorizontal: 28,
+    paddingTop: 80,
+    paddingBottom: 40,
   },
-  safeArea: {
+
+  content: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    justifyContent: "center",
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+
+  logo: {
+    alignItems: "center",
+    marginBottom: 5,
   },
-  title: {
-    textAlign: 'center',
+
+  logoRoof: {
+    color: "#FFFFFF",
+    fontSize: 75,
+    fontWeight: "300",
   },
-  code: {
-    textTransform: 'uppercase',
+
+  name: {
+    color: "#FFFFFF",
+    fontSize: 38,
+    fontWeight: "800",
+    textAlign: "center",
+    letterSpacing: -1,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+
+  nameAccent: {
+    color: "#55C59A",
+  },
+
+  subtitle: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    textAlign: "center",
+    lineHeight: 26,
+    marginTop: 12,
+    opacity: 0.9,
+  },
+
+  features: {
+    marginTop: 50,
+    gap: 18,
+  },
+
+  feature: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+  },
+
+  check: {
+    width: 24,
+    height: 24,
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  checkText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  featureText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+  },
+
+  footer: {
+    gap: 18,
+  },
+
+  button: {
+    backgroundColor: "#087354",
+    height: 58,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#40A987",
+  },
+
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+
+  footerText: {
+    color: "#FFFFFF",
+    textAlign: "center",
+    fontSize: 14,
+    lineHeight: 19,
+    opacity: 0.8,
   },
 });
