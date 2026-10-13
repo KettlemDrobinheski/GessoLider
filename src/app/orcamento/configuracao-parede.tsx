@@ -7,7 +7,7 @@ import { Brand } from '@/constants/brand';
 import { parseWallBudgetInput, parseWallMeasurements } from '@/utils/wall-configuration';
 
 export default function WallConfigurationScreen() {
-  const { parede, orcamento } = useLocalSearchParams<{ parede?: string | string[]; orcamento?: string | string[] }>();
+  const { parede, orcamento, valores } = useLocalSearchParams<{ parede?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
   const savedBudget = parseWallBudgetInput(orcamento);
   const measurements = savedBudget?.measurements ?? parseWallMeasurements(parede);
 
@@ -29,7 +29,9 @@ export default function WallConfigurationScreen() {
 
   return (
     <WallConfigurationForm key={JSON.stringify(savedBudget ?? measurements)} measurements={measurements} initialConfiguration={savedBudget?.configuration}
-      onContinue={(budget) => router.push({ pathname: '/orcamento/materiais', params: { orcamento: JSON.stringify(budget) } })} />
+      onContinue={(budget) => router.push({ pathname: '/orcamento/materiais', params: {
+        orcamento: JSON.stringify(budget), ...(typeof valores === 'string' ? { valores } : {}),
+      } })} />
   );
 }
 

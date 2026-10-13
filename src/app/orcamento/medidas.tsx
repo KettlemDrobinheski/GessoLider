@@ -12,11 +12,13 @@ import { OpeningCard } from '@/components/budget/opening-card';
 import { Brand } from '@/constants/brand';
 import { serviceOptions, type ServiceOption } from '@/constants/services';
 import type { MeasurementDraft, OpeningDraft } from '@/types/measurements';
-import type { WallMeasurements } from '@/types/wall-configuration';
+import type { WallBudgetInput, WallMeasurements } from '@/types/wall-configuration';
 import { dimensionFields, dimensionLabels, validateMeasurements } from '@/utils/measurements';
+import { parseWallBudgetInput } from '@/utils/wall-configuration';
 
 export default function MeasurementsScreen() {
-  const { servico } = useLocalSearchParams<{ servico?: string | string[] }>();
+  const { servico, orcamento, valores } = useLocalSearchParams<{ servico?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
+  const savedBudget = parseWallBudgetInput(orcamento);
   const service = typeof servico === 'string' ? serviceOptions.find((option) => option.id === servico) : undefined;
 
   if (!service) {
@@ -34,20 +36,29 @@ export default function MeasurementsScreen() {
     );
   }
 
-  return <MeasurementsForm key={service.id} service={service} />;
+  return <MeasurementsForm key={JSON.stringify({ service: service.id, savedBudget })} service={service}
+    savedBudget={service.id === 'wall' ? savedBudget : null} savedValues={typeof valores === 'string' ? valores : undefined} />;
 }
 
-function MeasurementsForm({ service }: { service: ServiceOption }) {
-  const [dimensions, setDimensions] = useState<MeasurementDraft>({ length: '', height: '', width: '', depth: '' });
-  const [hasOpenings, setHasOpenings] = useState(false);
-  const [openings, setOpenings] = useState<OpeningDraft[]>([]);
+function MeasurementsForm({ service, savedBudget, savedValues }: { service: ServiceOption; savedBudget: WallBudgetInput | null; savedValues?: string }) {
+  const savedMeasurements = savedBudget?.measurements;
+  const [dimensions, setDimensions] = useState<MeasurementDraft>({
+    length: savedMeasurements ? String(savedMeasurements.length) : '',
+    height: savedMeasurements ? String(savedMeasurements.height) : '', width: '', depth: '',
+  });
+  const [hasOpenings, setHasOpenings] = useState((savedMeasurements?.openings.length ?? 0) > 0);
+  const [openings, setOpenings] = useState<OpeningDraft[]>(savedMeasurements?.openings.map((opening) => ({
+    ...opening, width: String(opening.width), height: String(opening.height), quantity: String(opening.quantity),
+  })) ?? []);
   const nextOpeningId = useRef(1);
   const validation = validateMeasurements(service.id, dimensions, hasOpenings, openings);
   const canContinue = validation.value !== null;
 
   function addOpening() {
+    let id: string;
+    do { id = `opening-${nextOpeningId.current++}`; } while (openings.some((opening) => opening.id === id));
     const opening: OpeningDraft = {
-      id: `opening-${nextOpeningId.current++}`, type: 'door', width: '', height: '', quantity: '1',
+      id, type: 'door', width: '', height: '', quantity: '1',
     };
     setOpenings((current) => [...current, opening]);
   }
@@ -72,7 +83,11 @@ function MeasurementsForm({ service }: { service: ServiceOption }) {
       ...validation.value,
       areas: { gross: areas.gross, openings: areas.openings, net: areas.net },
     };
-    router.push({ pathname: '/orcamento/configuracao-parede', params: { parede: JSON.stringify(measurements) } });
+    router.push({ pathname: '/orcamento/configuracao-parede', params: {
+      parede: JSON.stringify(measurements),
+      ...(savedBudget ? { orcamento: JSON.stringify({ ...savedBudget, measurements }) } : {}),
+      ...(savedValues ? { valores: savedValues } : {}),
+    } });
   }
 
   return (

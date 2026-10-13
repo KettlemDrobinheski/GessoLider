@@ -1,4 +1,4 @@
-import type { BoardType, InsulationType, ProfileWidth, StudSpacingCm, WallSides } from '../types/wall-configuration';
+import type { BoardType, InsulationType, ProfileWidth, StudSpacingCm, WallSides, WastePercent } from '../types/wall-configuration';
 
 export const boardDimensions = { width: 1.2, height: 1.8 } as const;
 export const boardDimensionLabel = '1,20 × 1,80 m';
@@ -27,12 +27,23 @@ export const sidesOptions: readonly { value: WallSides; label: string }[] = [
   { value: 2, label: 'Dois lados' },
 ];
 
-export const insulationChoices = [
-  { value: false, label: 'Não' },
-  { value: true, label: 'Sim' },
-] as const;
+export const wasteOptions: readonly { value: WastePercent; label: string }[] = [
+  { value: 0, label: '0%' },
+  { value: 5, label: '5%' },
+  { value: 10, label: '10%' },
+];
 
 export const insulationOptions: readonly { value: InsulationType; label: string }[] = [
   { value: 'glass-wool', label: 'Lã de vidro' },
   { value: 'rock-wool', label: 'Lã de rocha' },
 ];
+
+export const internalInsulationOptions: readonly { value: InsulationType | null; label: string }[] = [
+  { value: null, label: 'Sem isolamento' },
+  ...insulationOptions,
+];
+
+export const acousticBandOptions = [
+  { value: true, label: 'Sim' },
+  { value: false, label: 'Não' },
+] as const;

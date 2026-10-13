@@ -4,6 +4,7 @@ export type BoardType = 'ST' | 'RU' | 'RF';
 export type ProfileWidth = 48 | 70 | 90;
 export type StudSpacingCm = 40 | 60;
 export type WallSides = 1 | 2;
+export type WastePercent = 0 | 5 | 10;
 export type InsulationType = 'glass-wool' | 'rock-wool';
 
 export type WallConfigurationDraft = {
@@ -11,8 +12,10 @@ export type WallConfigurationDraft = {
   profileWidth: ProfileWidth | null;
   studSpacingCm: StudSpacingCm | null;
   sides: WallSides | null;
+  wastePercent: WastePercent | null;
   hasInsulation: boolean;
   insulationType: InsulationType | null;
+  acousticBand: boolean | null;
 };
 
 export type WallConfiguration = {
@@ -23,7 +26,9 @@ export type WallConfiguration = {
   guideLength: number;
   studLength: number;
   sides: WallSides;
+  wastePercent: WastePercent;
   insulation: InsulationType | null;
+  acousticBand: boolean;
 };
 
 export type WallMeasurements = Extract<ServiceMeasurements, { service: 'wall' }> & {

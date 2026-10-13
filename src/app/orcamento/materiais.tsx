@@ -4,25 +4,33 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BudgetSteps } from '@/components/budget/budget-steps';
-import { WallProfileResults } from '@/components/budget/wall-profile-results';
+import { WallMaterialResults } from '@/components/budget/wall-material-results';
 import { Brand } from '@/constants/brand';
-import { calculateWallProfiles } from '@/domain/calculations/wallProfiles';
+import { insulationOptions, sidesOptions } from '@/constants/wall-configuration';
+import { calculateWallMaterials } from '@/domain/calculations/wallMaterials';
+import { formatArea } from '@/utils/measurements';
 import { parseWallBudgetInput } from '@/utils/wall-configuration';
+import { BudgetButton } from '@/components/budget/budget-screen';
 
 export default function MaterialsScreen() {
-  const { orcamento } = useLocalSearchParams<{ orcamento?: string | string[] }>();
+  const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
   const budget = parseWallBudgetInput(orcamento);
-  const result = budget ? calculateWallProfiles({
-    length: budget.measurements.length, height: budget.measurements.height,
-    openings: budget.measurements.openings, studSpacingCm: budget.configuration.studSpacingCm,
-  }) : null;
+  const result = budget ? calculateWallMaterials({ ...budget.measurements, ...budget.configuration }) : null;
 
   function handleBack() {
     if (router.canGoBack()) router.back();
     else if (budget) router.replace({ pathname: '/orcamento/configuracao-parede', params: {
       orcamento: JSON.stringify(budget),
+      ...(typeof valores === 'string' ? { valores } : {}),
     } });
     else router.replace({ pathname: '/orcamento/medidas', params: { servico: 'wall' } });
+  }
+
+  function handleContinue() {
+    if (!budget || result?.status !== 'valid') return;
+    router.push({ pathname: '/orcamento/valores', params: {
+      orcamento: JSON.stringify(budget), ...(typeof valores === 'string' ? { valores } : {}),
+    } });
   }
 
   function formatMeasure(value: number) {
@@ -54,8 +62,18 @@ export default function MaterialsScreen() {
                 <Text style={styles.dimensions}>{formatMeasure(budget.measurements.length)} × {formatMeasure(budget.measurements.height)} m</Text>
                 <Text style={styles.summaryText}>Perfil: {budget.configuration.profileWidth} mm</Text>
                 <Text style={styles.summaryText}>Espaçamento: {budget.configuration.studSpacingCm} cm</Text>
+                {result.status === 'valid' && (
+                  <>
+                    <Text style={styles.summaryText}>Área: {formatArea(result.wallArea)}</Text>
+                    <Text style={styles.summaryText}>Aplicação: {sidesOptions.find((option) => option.value === result.sides)?.label}</Text>
+                    <Text style={styles.summaryText}>Área de revestimento: {formatArea(result.coveringArea)}</Text>
+                    <Text style={styles.summaryText}>Margem: {result.wastePercent}%</Text>
+                    <Text style={styles.summaryText}>Área considerada: {formatArea(result.areaWithWaste)}</Text>
+                    <Text style={styles.summaryText}>Isolamento: {insulationOptions.find((option) => option.value === budget.configuration.insulation)?.label ?? 'Não'}</Text>
+                  </>
+                )}
               </View>
-              <WallProfileResults result={result} profileWidth={budget.configuration.profileWidth} />
+              <WallMaterialResults result={result} />
             </>
           ) : (
             <View accessibilityRole="alert" style={styles.summary}>
@@ -71,6 +89,9 @@ export default function MaterialsScreen() {
           )}
         </View>
       </ScrollView>
+      <View style={styles.footer}>
+        <BudgetButton label="Continuar" onPress={handleContinue} disabled={result?.status !== 'valid'} />
+      </View>
     </SafeAreaView>
   );
 }
@@ -84,6 +105,7 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scroll: { flexGrow: 1, alignItems: 'center' },
   content: { width: '100%', maxWidth: 640, padding: 20, gap: 24 },
+  footer: { width: '100%', maxWidth: 640, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
   introduction: { gap: 8 },
   title: { color: Brand.dark, fontSize: 24, lineHeight: 32, fontWeight: '700' },
   subtitle: { color: '#60706A', fontSize: 14, lineHeight: 21 },

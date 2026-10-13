@@ -1,11 +1,12 @@
-import { boardDimensions, boardOptions, insulationOptions, profileLength, profileOptions, sidesOptions, studSpacingOptions } from '../constants/wall-configuration';
+import { boardDimensions, boardOptions, insulationOptions, profileLength, profileOptions, sidesOptions, studSpacingOptions, wasteOptions } from '../constants/wall-configuration';
 import type { WallBudgetInput, WallConfiguration, WallConfigurationDraft, WallMeasurements } from '../types/wall-configuration';
 import type { OpeningDraft } from '../types/measurements';
 import { validateMeasurements } from './measurements';
 
 export function buildWallConfiguration(draft: WallConfigurationDraft): WallConfiguration | null {
-  if (draft.boardType === null || draft.profileWidth === null || draft.studSpacingCm === null || draft.sides === null) return null;
+  if (draft.boardType === null || draft.profileWidth === null || draft.studSpacingCm === null || draft.sides === null || draft.wastePercent === null) return null;
   if (draft.hasInsulation && draft.insulationType === null) return null;
+  if (draft.acousticBand !== undefined && typeof draft.acousticBand !== 'boolean') return null;
 
   return {
     boardType: draft.boardType,
@@ -15,7 +16,10 @@ export function buildWallConfiguration(draft: WallConfigurationDraft): WallConfi
     guideLength: profileLength,
     studLength: profileLength,
     sides: draft.sides,
+    wastePercent: draft.wastePercent,
     insulation: draft.hasInsulation ? draft.insulationType : null,
+    // Chamadas anteriores à introdução da banda não incluíam esse campo.
+    acousticBand: draft.acousticBand ?? false,
   };
 }
 
@@ -80,8 +84,9 @@ export function parseWallBudgetInput(parameter: string | string[] | undefined): 
     const profile = profileOptions.find((option) => option.value === configuration.profileWidth);
     const spacing = studSpacingOptions.find((option) => option.value === configuration.studSpacingCm);
     const sides = sidesOptions.find((option) => option.value === configuration.sides);
+    const waste = wasteOptions.find((option) => option.value === configuration.wastePercent);
     const insulation = insulationOptions.find((option) => option.value === configuration.insulation);
-    if (!measurements || !board || !profile || !spacing || !sides
+    if (!measurements || !board || !profile || !spacing || !sides || !waste || typeof configuration.acousticBand !== 'boolean'
       || (configuration.insulation !== null && !insulation)
       || !isRecord(configuration.boardDimensions)
       || configuration.boardDimensions.width !== boardDimensions.width
@@ -93,7 +98,8 @@ export function parseWallBudgetInput(parameter: string | string[] | undefined): 
       configuration: {
         boardType: board.value, boardDimensions: { ...boardDimensions }, profileWidth: profile.value,
         studSpacingCm: spacing.value, guideLength: profileLength, studLength: profileLength,
-        sides: sides.value, insulation: insulation?.value ?? null,
+        sides: sides.value, wastePercent: waste.value, insulation: insulation?.value ?? null,
+        acousticBand: configuration.acousticBand,
       },
     };
   } catch {

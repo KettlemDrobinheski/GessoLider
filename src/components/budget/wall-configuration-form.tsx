@@ -5,7 +5,7 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/brand';
-import { boardDimensionLabel, boardOptions, insulationChoices, insulationOptions, profileOptions, sidesOptions, studSpacingOptions } from '@/constants/wall-configuration';
+import { acousticBandOptions, boardDimensionLabel, boardOptions, internalInsulationOptions, profileOptions, sidesOptions, studSpacingOptions, wasteOptions } from '@/constants/wall-configuration';
 import type { WallBudgetInput, WallConfiguration, WallConfigurationDraft, WallMeasurements } from '@/types/wall-configuration';
 import { buildWallConfiguration } from '@/utils/wall-configuration';
 import { BudgetSteps } from './budget-steps';
@@ -21,8 +21,10 @@ export function WallConfigurationForm({ measurements, initialConfiguration, onCo
     profileWidth: initialConfiguration?.profileWidth ?? null,
     studSpacingCm: initialConfiguration?.studSpacingCm ?? null,
     sides: initialConfiguration?.sides ?? null,
+    wastePercent: initialConfiguration?.wastePercent ?? null,
     hasInsulation: initialConfiguration?.insulation != null,
     insulationType: initialConfiguration?.insulation ?? null,
+    acousticBand: initialConfiguration?.acousticBand ?? null,
   });
   const configuration = buildWallConfiguration(draft);
 
@@ -82,20 +84,25 @@ export function WallConfigurationForm({ measurements, initialConfiguration, onCo
                 onSelect={() => updateDraft({ sides: option.value })} />
             ))}
           </ConfigurationSection>
-          <ConfigurationSection title="Utilizar isolamento?">
-            {insulationChoices.map((option) => (
-              <ConfigurationOption key={option.label} label={option.label} selected={draft.hasInsulation === option.value}
-                onSelect={() => updateDraft({ hasInsulation: option.value, ...(option.value ? {} : { insulationType: null }) })} />
+          <ConfigurationSection title="Isolamento interno">
+            {internalInsulationOptions.map((option) => (
+              <ConfigurationOption key={option.label} label={option.label}
+                selected={(draft.hasInsulation ? draft.insulationType : null) === option.value}
+                onSelect={() => updateDraft({ hasInsulation: option.value !== null, insulationType: option.value })} />
             ))}
           </ConfigurationSection>
-          {draft.hasInsulation && (
-            <ConfigurationSection title="Tipo de isolamento">
-              {insulationOptions.map((option) => (
-                <ConfigurationOption key={option.value} label={option.label} selected={draft.insulationType === option.value}
-                  onSelect={() => updateDraft({ insulationType: option.value })} />
-              ))}
-            </ConfigurationSection>
-          )}
+          <ConfigurationSection title="Banda acústica">
+            {acousticBandOptions.map((option) => (
+              <ConfigurationOption key={option.label} label={option.label} selected={draft.acousticBand === option.value}
+                onSelect={() => updateDraft({ acousticBand: option.value })} />
+            ))}
+          </ConfigurationSection>
+          <ConfigurationSection title="Margem de perda">
+            {wasteOptions.map((option) => (
+              <ConfigurationOption key={option.value} label={option.label} selected={draft.wastePercent === option.value}
+                onSelect={() => updateDraft({ wastePercent: option.value })} />
+            ))}
+          </ConfigurationSection>
           <WallConfigurationSummary draft={draft} />
         </View>
       </ScrollView>

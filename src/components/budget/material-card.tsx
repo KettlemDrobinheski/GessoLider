@@ -1,14 +1,25 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Brand } from '@/constants/brand';
 
-type Props = { name: string; pieceLength: number; quantity: number };
+type Props = { name: string; measure: string; description?: string; quantity: number; unit?: 'peça' | 'placa' };
 
-export function MaterialCard({ name, pieceLength, quantity }: Props) {
+export function MaterialCard({ name, measure, description, quantity, unit = 'peça' }: Props) {
   return (
     <View style={styles.card}>
       <Text accessibilityRole="header" style={styles.name}>{name}</Text>
-      <Text style={styles.measure}>{pieceLength.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m</Text>
-      <Text style={styles.quantity}>Quantidade: {quantity.toLocaleString('pt-BR')} {quantity === 1 ? 'peça' : 'peças'}</Text>
+      {!!description && <Text style={styles.measure}>{description}</Text>}
+      <Text style={styles.measure}>{measure}</Text>
+      <Text style={styles.quantity}>Quantidade: {quantity.toLocaleString('pt-BR')} {quantity === 1 ? unit : `${unit}s`}</Text>
+    </View>
+  );
+}
+
+export function MaterialEstimateCard({ name, estimate, note }: { name: string; estimate: string; note?: string }) {
+  return (
+    <View style={styles.card}>
+      <Text accessibilityRole="header" style={styles.name}>{name}</Text>
+      <Text style={styles.quantity}>{estimate}</Text>
+      {!!note && <Text style={styles.measure}>{note}</Text>}
     </View>
   );
 }
