@@ -12,6 +12,7 @@ import { OpeningCard } from '@/components/budget/opening-card';
 import { Brand } from '@/constants/brand';
 import { serviceOptions, type ServiceOption } from '@/constants/services';
 import type { MeasurementDraft, OpeningDraft } from '@/types/measurements';
+import type { WallMeasurements } from '@/types/wall-configuration';
 import { dimensionFields, dimensionLabels, validateMeasurements } from '@/utils/measurements';
 
 export default function MeasurementsScreen() {
@@ -64,6 +65,14 @@ function MeasurementsForm({ service }: { service: ServiceOption }) {
   function handleContinue() {
     if (validation.value === null) return;
     Keyboard.dismiss();
+    if (validation.value.service !== 'wall') return;
+    const areas = validation.areas;
+    if (!areas || areas.gross === null || areas.openings === null || areas.net === null) return;
+    const measurements: WallMeasurements = {
+      ...validation.value,
+      areas: { gross: areas.gross, openings: areas.openings, net: areas.net },
+    };
+    router.push({ pathname: '/orcamento/configuracao-parede', params: { parede: JSON.stringify(measurements) } });
   }
 
   return (
