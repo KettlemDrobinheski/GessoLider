@@ -1,16 +1,17 @@
-import { boardDimensions, profileLength } from '../constants/wall-configuration';
-import type { WallConfiguration, WallConfigurationDraft, WallMeasurements } from '../types/wall-configuration';
+import { boardDimensions, boardOptions, insulationOptions, profileLength, profileOptions, sidesOptions, studSpacingOptions } from '../constants/wall-configuration';
+import type { WallBudgetInput, WallConfiguration, WallConfigurationDraft, WallMeasurements } from '../types/wall-configuration';
 import type { OpeningDraft } from '../types/measurements';
 import { validateMeasurements } from './measurements';
 
 export function buildWallConfiguration(draft: WallConfigurationDraft): WallConfiguration | null {
-  if (draft.boardType === null || draft.profileWidth === null || draft.sides === null) return null;
+  if (draft.boardType === null || draft.profileWidth === null || draft.studSpacingCm === null || draft.sides === null) return null;
   if (draft.hasInsulation && draft.insulationType === null) return null;
 
   return {
     boardType: draft.boardType,
     boardDimensions: { ...boardDimensions },
     profileWidth: draft.profileWidth,
+    studSpacingCm: draft.studSpacingCm,
     guideLength: profileLength,
     studLength: profileLength,
     sides: draft.sides,
@@ -62,6 +63,39 @@ export function parseWallMeasurements(parameter: string | string[] | undefined):
     }
 
     return { ...value, areas: validatedAreas };
+  } catch {
+    return null;
+  }
+}
+
+export function parseWallBudgetInput(parameter: string | string[] | undefined): WallBudgetInput | null {
+  if (typeof parameter !== 'string') return null;
+
+  try {
+    const data: unknown = JSON.parse(parameter);
+    if (!isRecord(data) || !isRecord(data.configuration)) return null;
+    const measurements = parseWallMeasurements(JSON.stringify(data.measurements));
+    const configuration = data.configuration;
+    const board = boardOptions.find((option) => option.value === configuration.boardType);
+    const profile = profileOptions.find((option) => option.value === configuration.profileWidth);
+    const spacing = studSpacingOptions.find((option) => option.value === configuration.studSpacingCm);
+    const sides = sidesOptions.find((option) => option.value === configuration.sides);
+    const insulation = insulationOptions.find((option) => option.value === configuration.insulation);
+    if (!measurements || !board || !profile || !spacing || !sides
+      || (configuration.insulation !== null && !insulation)
+      || !isRecord(configuration.boardDimensions)
+      || configuration.boardDimensions.width !== boardDimensions.width
+      || configuration.boardDimensions.height !== boardDimensions.height
+      || configuration.guideLength !== profileLength || configuration.studLength !== profileLength) return null;
+
+    return {
+      measurements,
+      configuration: {
+        boardType: board.value, boardDimensions: { ...boardDimensions }, profileWidth: profile.value,
+        studSpacingCm: spacing.value, guideLength: profileLength, studLength: profileLength,
+        sides: sides.value, insulation: insulation?.value ?? null,
+      },
+    };
   } catch {
     return null;
   }

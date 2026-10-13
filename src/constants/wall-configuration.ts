@@ -1,4 +1,4 @@
-import type { BoardType, InsulationType, ProfileWidth, WallSides } from '../types/wall-configuration';
+import type { BoardType, InsulationType, ProfileWidth, StudSpacingCm, WallSides } from '../types/wall-configuration';
 
 export const boardDimensions = { width: 1.2, height: 1.8 } as const;
 export const boardDimensionLabel = '1,20 × 1,80 m';
@@ -15,6 +15,11 @@ export const profileOptions: readonly { value: ProfileWidth; label: string }[] =
   { value: 48, label: '48 mm' },
   { value: 70, label: '70 mm' },
   { value: 90, label: '90 mm' },
+];
+
+export const studSpacingOptions: readonly { value: StudSpacingCm; label: string }[] = [
+  { value: 40, label: '40 cm' },
+  { value: 60, label: '60 cm' },
 ];
 
 export const sidesOptions: readonly { value: WallSides; label: string }[] = [

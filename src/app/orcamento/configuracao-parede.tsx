@@ -4,11 +4,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WallConfigurationForm } from '@/components/budget/wall-configuration-form';
 import { Brand } from '@/constants/brand';
-import { parseWallMeasurements } from '@/utils/wall-configuration';
+import { parseWallBudgetInput, parseWallMeasurements } from '@/utils/wall-configuration';
 
 export default function WallConfigurationScreen() {
-  const { parede } = useLocalSearchParams<{ parede?: string | string[] }>();
-  const measurements = parseWallMeasurements(parede);
+  const { parede, orcamento } = useLocalSearchParams<{ parede?: string | string[]; orcamento?: string | string[] }>();
+  const savedBudget = parseWallBudgetInput(orcamento);
+  const measurements = savedBudget?.measurements ?? parseWallMeasurements(parede);
 
   if (!measurements) {
     return (
@@ -26,7 +27,10 @@ export default function WallConfigurationScreen() {
     );
   }
 
-  return <WallConfigurationForm key={JSON.stringify(measurements)} measurements={measurements} />;
+  return (
+    <WallConfigurationForm key={JSON.stringify(savedBudget ?? measurements)} measurements={measurements} initialConfiguration={savedBudget?.configuration}
+      onContinue={(budget) => router.push({ pathname: '/orcamento/materiais', params: { orcamento: JSON.stringify(budget) } })} />
+  );
 }
 
 const styles = StyleSheet.create({

@@ -5,19 +5,24 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/brand';
-import { boardDimensionLabel, boardOptions, insulationChoices, insulationOptions, profileOptions, sidesOptions } from '@/constants/wall-configuration';
-import type { WallBudgetInput, WallConfigurationDraft, WallMeasurements } from '@/types/wall-configuration';
+import { boardDimensionLabel, boardOptions, insulationChoices, insulationOptions, profileOptions, sidesOptions, studSpacingOptions } from '@/constants/wall-configuration';
+import type { WallBudgetInput, WallConfiguration, WallConfigurationDraft, WallMeasurements } from '@/types/wall-configuration';
 import { buildWallConfiguration } from '@/utils/wall-configuration';
 import { BudgetSteps } from './budget-steps';
 import { ConfigurationOption } from './configuration-option';
 import { ConfigurationSection } from './configuration-section';
 import { WallConfigurationSummary } from './wall-configuration-summary';
 
-type Props = { measurements: WallMeasurements; onContinue?: (budget: WallBudgetInput) => void };
+type Props = { measurements: WallMeasurements; initialConfiguration?: WallConfiguration; onContinue?: (budget: WallBudgetInput) => void };
 
-export function WallConfigurationForm({ measurements, onContinue }: Props) {
+export function WallConfigurationForm({ measurements, initialConfiguration, onContinue }: Props) {
   const [draft, setDraft] = useState<WallConfigurationDraft>({
-    boardType: null, profileWidth: null, sides: null, hasInsulation: false, insulationType: null,
+    boardType: initialConfiguration?.boardType ?? null,
+    profileWidth: initialConfiguration?.profileWidth ?? null,
+    studSpacingCm: initialConfiguration?.studSpacingCm ?? null,
+    sides: initialConfiguration?.sides ?? null,
+    hasInsulation: initialConfiguration?.insulation != null,
+    insulationType: initialConfiguration?.insulation ?? null,
   });
   const configuration = buildWallConfiguration(draft);
 
@@ -63,6 +68,12 @@ export function WallConfigurationForm({ measurements, onContinue }: Props) {
             {profileOptions.map((option) => (
               <ConfigurationOption key={option.value} label={option.label} selected={draft.profileWidth === option.value}
                 onSelect={() => updateDraft({ profileWidth: option.value })} />
+            ))}
+          </ConfigurationSection>
+          <ConfigurationSection title="Espaçamento entre montantes" description="Selecione a distância entre os montantes.">
+            {studSpacingOptions.map((option) => (
+              <ConfigurationOption key={option.value} label={option.label} selected={draft.studSpacingCm === option.value}
+                onSelect={() => updateDraft({ studSpacingCm: option.value })} />
             ))}
           </ConfigurationSection>
           <ConfigurationSection title="Aplicação das placas">

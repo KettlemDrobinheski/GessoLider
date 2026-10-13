@@ -1,11 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Brand } from '@/constants/brand';
-import { boardDimensionLabel, boardOptions, insulationOptions, profileLengthLabel, sidesOptions } from '@/constants/wall-configuration';
+import { boardDimensionLabel, boardOptions, insulationOptions, profileLengthLabel, sidesOptions, studSpacingOptions } from '@/constants/wall-configuration';
 import type { WallConfigurationDraft } from '@/types/wall-configuration';
 
 export function WallConfigurationSummary({ draft }: { draft: WallConfigurationDraft }) {
   const board = boardOptions.find((option) => option.value === draft.boardType);
   const sides = sidesOptions.find((option) => option.value === draft.sides);
+  const spacing = studSpacingOptions.find((option) => option.value === draft.studSpacingCm);
   const insulation = insulationOptions.find((option) => option.value === draft.insulationType);
   const profile = draft.profileWidth === null ? 'Não selecionado' : `${draft.profileWidth} mm`;
   const rows = [
@@ -13,6 +14,7 @@ export function WallConfigurationSummary({ draft }: { draft: WallConfigurationDr
     { label: 'Perfil', value: profile },
     { label: 'Guia', value: draft.profileWidth === null ? 'Não selecionada' : `${profile} × ${profileLengthLabel}` },
     { label: 'Montante', value: draft.profileWidth === null ? 'Não selecionado' : `${profile} × ${profileLengthLabel}` },
+    { label: 'Espaçamento', value: spacing?.label ?? 'Não selecionado' },
     { label: 'Aplicação', value: sides?.label ?? 'Não selecionada' },
     { label: 'Isolamento', value: draft.hasInsulation ? insulation?.label ?? 'Selecione o tipo' : 'Não' },
   ];
