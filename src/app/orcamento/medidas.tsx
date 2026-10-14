@@ -1,3 +1,5 @@
+import { parseCeilingBudgetInput } from '@/utils/ceiling';
+import type { CeilingBudgetInput } from '@/types/ceiling';
 import { useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -19,6 +21,7 @@ import { parseWallBudgetInput } from '@/utils/wall-configuration';
 export default function MeasurementsScreen() {
   const { servico, orcamento, valores } = useLocalSearchParams<{ servico?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
   const savedBudget = parseWallBudgetInput(orcamento);
+  const savedCeiling = parseCeilingBudgetInput(orcamento);
   const service = typeof servico === 'string' ? serviceOptions.find((option) => option.id === servico) : undefined;
 
   if (!service) {
@@ -36,15 +39,15 @@ export default function MeasurementsScreen() {
     );
   }
 
-  return <MeasurementsForm key={JSON.stringify({ service: service.id, savedBudget })} service={service}
-    savedBudget={service.id === 'wall' ? savedBudget : null} savedValues={typeof valores === 'string' ? valores : undefined} />;
+  return <MeasurementsForm key={JSON.stringify({ service: service.id, savedBudget, savedCeiling })} service={service}
+    savedBudget={service.id === 'wall' ? savedBudget : null} savedCeiling={service.id === 'ceiling' ? savedCeiling : null} savedValues={typeof valores === 'string' ? valores : undefined} />;
 }
 
-function MeasurementsForm({ service, savedBudget, savedValues }: { service: ServiceOption; savedBudget: WallBudgetInput | null; savedValues?: string }) {
+function MeasurementsForm({ service, savedBudget, savedCeiling, savedValues }: { service: ServiceOption; savedBudget: WallBudgetInput | null; savedCeiling: CeilingBudgetInput | null; savedValues?: string }) {
   const savedMeasurements = savedBudget?.measurements;
   const [dimensions, setDimensions] = useState<MeasurementDraft>({
-    length: savedMeasurements ? String(savedMeasurements.length) : '',
-    height: savedMeasurements ? String(savedMeasurements.height) : '', width: '', depth: '',
+    length: savedMeasurements ? String(savedMeasurements.length) : savedCeiling ? String(savedCeiling.measurements.length) : '',
+    height: savedMeasurements ? String(savedMeasurements.height) : '', width: savedCeiling ? String(savedCeiling.measurements.width) : '', depth: '',
   });
   const [hasOpenings, setHasOpenings] = useState((savedMeasurements?.openings.length ?? 0) > 0);
   const [openings, setOpenings] = useState<OpeningDraft[]>(savedMeasurements?.openings.map((opening) => ({
@@ -76,6 +79,15 @@ function MeasurementsForm({ service, savedBudget, savedValues }: { service: Serv
   function handleContinue() {
     if (validation.value === null) return;
     Keyboard.dismiss();
+    if (validation.value.service === 'ceiling') {
+      const measurements = validation.value;
+      router.push({ pathname: '/orcamento/configuracao-forro', params: {
+        forro: JSON.stringify(measurements),
+        ...(savedCeiling ? { orcamento: JSON.stringify({ ...savedCeiling, measurements }) } : {}),
+        ...(savedValues ? { valores: savedValues } : {}),
+      } });
+      return;
+    }
     if (validation.value.service !== 'wall') return;
     const areas = validation.areas;
     if (!areas || areas.gross === null || areas.openings === null || areas.net === null) return;
