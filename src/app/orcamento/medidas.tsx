@@ -1,5 +1,7 @@
 import { parseCeilingBudgetInput } from '@/utils/ceiling';
 import type { CeilingBudgetInput } from '@/types/ceiling';
+import { parseWoodWallCladdingBudgetInput } from '@/utils/wood-wall-cladding';
+import type { WoodWallCladdingBudgetInput } from '@/types/wood-wall-cladding';
 import { useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -22,6 +24,7 @@ export default function MeasurementsScreen() {
   const { servico, orcamento, valores } = useLocalSearchParams<{ servico?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
   const savedBudget = parseWallBudgetInput(orcamento);
   const savedCeiling = parseCeilingBudgetInput(orcamento);
+  const savedCladding = parseWoodWallCladdingBudgetInput(orcamento);
   const service = typeof servico === 'string' ? serviceOptions.find((option) => option.id === servico) : undefined;
 
   if (!service) {
@@ -39,15 +42,16 @@ export default function MeasurementsScreen() {
     );
   }
 
-  return <MeasurementsForm key={JSON.stringify({ service: service.id, savedBudget, savedCeiling })} service={service}
+  return <MeasurementsForm key={JSON.stringify({ service: service.id, savedBudget, savedCeiling, savedCladding })} service={service}
+    savedCladding={service.id === 'lining' ? savedCladding : null}
     savedBudget={service.id === 'wall' ? savedBudget : null} savedCeiling={service.id === 'ceiling' ? savedCeiling : null} savedValues={typeof valores === 'string' ? valores : undefined} />;
 }
 
-function MeasurementsForm({ service, savedBudget, savedCeiling, savedValues }: { service: ServiceOption; savedBudget: WallBudgetInput | null; savedCeiling: CeilingBudgetInput | null; savedValues?: string }) {
+function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, savedValues }: { service: ServiceOption; savedBudget: WallBudgetInput | null; savedCeiling: CeilingBudgetInput | null; savedCladding: WoodWallCladdingBudgetInput | null; savedValues?: string }) {
   const savedMeasurements = savedBudget?.measurements;
   const [dimensions, setDimensions] = useState<MeasurementDraft>({
-    length: savedMeasurements ? String(savedMeasurements.length) : savedCeiling ? String(savedCeiling.measurements.length) : '',
-    height: savedMeasurements ? String(savedMeasurements.height) : '', width: savedCeiling ? String(savedCeiling.measurements.width) : '', depth: '',
+    length: savedMeasurements ? String(savedMeasurements.length) : savedCeiling ? String(savedCeiling.measurements.length) : savedCladding ? String(savedCladding.measurements.width) : '',
+    height: savedMeasurements ? String(savedMeasurements.height) : savedCladding ? String(savedCladding.measurements.height) : '', width: savedCeiling ? String(savedCeiling.measurements.width) : '', depth: '',
   });
   const [hasOpenings, setHasOpenings] = useState((savedMeasurements?.openings.length ?? 0) > 0);
   const [openings, setOpenings] = useState<OpeningDraft[]>(savedMeasurements?.openings.map((opening) => ({
@@ -79,6 +83,15 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedValues }: {
   function handleContinue() {
     if (validation.value === null) return;
     Keyboard.dismiss();
+    if (validation.value.service === 'lining') {
+      const measurements = { service: 'lining' as const, width: validation.value.length, height: validation.value.height };
+      router.push({ pathname: '/orcamento/configuracao-revestimento', params: {
+        revestimento: JSON.stringify(measurements),
+        ...(savedCladding ? { orcamento: JSON.stringify({ ...savedCladding, measurements }) } : {}),
+        ...(savedValues ? { valores: savedValues } : {}),
+      } });
+      return;
+    }
     if (validation.value.service === 'ceiling') {
       const measurements = validation.value;
       router.push({ pathname: '/orcamento/configuracao-forro', params: {
@@ -126,7 +139,7 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedValues }: {
 
             <View style={styles.dimensionRow}>
               {dimensionFields[service.id].map((key) => (
-                <MeasurementField key={key} label={dimensionLabels[key]} value={dimensions[key]} error={validation.fields[key]}
+                <MeasurementField key={key} label={service.id === 'lining' && key === 'length' ? 'Largura' : dimensionLabels[key]} value={dimensions[key]} error={validation.fields[key]}
                   onChangeText={(value) => setDimensions((current) => ({ ...current, [key]: value }))} />
               ))}
             </View>

@@ -24,8 +24,8 @@ export const serviceOptions: readonly ServiceOption[] = [
   },
   {
     id: 'lining',
-    title: 'Revestimento',
-    description: 'Revestimento de paredes',
+    title: 'Revestimento em parede de madeira',
+    description: 'Placas de drywall fixadas diretamente na madeira',
     icon: { ios: 'square.stack.3d.up', android: 'layers', web: 'layers' },
   },
   {
