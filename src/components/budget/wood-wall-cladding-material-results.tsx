@@ -1,3 +1,4 @@
+import { materialEstimateNotice } from '@/constants/budget-document';
 import { StyleSheet, Text, View } from 'react-native';
 import { boardDimensionLabel } from '@/constants/wall-configuration';
 import { ceilingMaterials } from '@/constants/ceiling';
@@ -14,7 +15,7 @@ export function WoodWallCladdingMaterialResults({ result }: { result: WoodWallCl
         note={`Caixa com ${ceilingMaterials.screwsPerBox.toLocaleString('pt-BR')} unidades — ${result.screwBoxes.toLocaleString('pt-BR')} ${result.screwBoxes === 1 ? 'caixa' : 'caixas'}.`} />
       <MaterialEstimateCard name="Fita para juntas" estimate={`${measure(result.tapeMeters)} m`} />
       <MaterialEstimateCard name="Massa para juntas" estimate={`${measure(result.compoundKg)} kg`} />
-      <Text style={styles.note}>Quantidades estimadas. O consumo pode variar conforme as condições e o método de execução da obra.</Text>
+      <Text style={styles.note}>{materialEstimateNotice}</Text>
     </View>
   );
 }

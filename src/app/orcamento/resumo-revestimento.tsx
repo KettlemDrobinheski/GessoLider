@@ -1,3 +1,4 @@
+import { BudgetDocumentPreview } from '@/components/budget/budget-document-preview';
 import { CompanySummary } from '@/components/budget/company-summary';
 import { useMemo } from 'react';
 import { ClientSummary } from '@/components/budget/client-summary';
@@ -52,8 +53,7 @@ export default function WoodWallCladdingSummaryScreen() {
       {!!pricing.notes.trim() && <BudgetCard title="Observações"><Text style={styles.text}>{pricing.notes}</Text></BudgetCard>}
       <BudgetButton label="Editar medidas/configuração" onPress={editMeasurements} />
       <BudgetButton label="Editar valores" onPress={editValues} />
-      <Text style={styles.text}>A geração do documento será disponibilizada na próxima etapa.</Text>
-      <BudgetButton label="Gerar orçamento" disabled />
+      <BudgetDocumentPreview source={{ service: 'lining', budget, materials, pricing }} client={client} />
     </BudgetScreen>
   );
 }

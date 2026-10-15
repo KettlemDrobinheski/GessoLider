@@ -1,3 +1,4 @@
+import { materialEstimateNotice } from '@/constants/budget-document';
 import { StyleSheet, Text, View } from 'react-native';
 import type { CeilingResult } from '@/domain/calculations/ceiling';
 import { Brand } from '@/constants/brand';
@@ -16,7 +17,7 @@ export function CeilingMaterialResults({ result }: { result: CeilingResult }) {
         note={`Estimativa utilizada: ${result.screws.toLocaleString('pt-BR')} parafusos.`} />
       <MaterialEstimateCard name="Fita para juntas" estimate={`${measure(result.tapeMeters)} m`} />
       <MaterialEstimateCard name="Massa para juntas" estimate={`${measure(result.compoundKg)} kg`} />
-      <Text style={styles.note}>Quantidades estimadas. O consumo pode variar conforme as condições e o método de execução da obra.</Text>
+      <Text style={styles.note}>{materialEstimateNotice}</Text>
     </View>
   );
 }

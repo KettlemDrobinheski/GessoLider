@@ -1,3 +1,4 @@
+import { BudgetDocumentPreview } from '@/components/budget/budget-document-preview';
 import { CompanySummary } from '@/components/budget/company-summary';
 import { useMemo } from 'react';
 import { ClientSummary } from '@/components/budget/client-summary';
@@ -84,8 +85,7 @@ export default function SummaryScreen() {
         <BudgetButton label="Editar medidas/configuração" onPress={editMeasurements} />
         <BudgetButton label="Editar valores" onPress={editValues} />
       </View>
-      <Text style={styles.note}>A geração do documento será disponibilizada na próxima etapa.</Text>
-      <BudgetButton label="Gerar orçamento" disabled />
+      <BudgetDocumentPreview source={{ service: 'wall', budget, materials, pricing }} client={client} />
     </BudgetScreen>
   );
 }

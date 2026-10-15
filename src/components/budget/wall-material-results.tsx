@@ -1,3 +1,4 @@
+import { materialEstimateNotice } from '@/constants/budget-document';
 import { StyleSheet, Text, View } from 'react-native';
 import { Brand } from '@/constants/brand';
 import { boardOptions, insulationOptions } from '@/constants/wall-configuration';
@@ -50,7 +51,7 @@ export function WallMaterialResults({ result }: { result: WallMaterialsResult })
               note="Estimativa por área, sem levantamento linear detalhado dos encontros da parede." />
           </>
         )}
-        <Text style={styles.note}>As quantidades são estimativas baseadas nas medidas e configurações informadas. O consumo real pode variar conforme o sistema de instalação, recortes, paginação e condições da obra.</Text>
+        <Text style={styles.note}>{materialEstimateNotice}</Text>
         <Text style={styles.note}>As guias são estimadas pela metragem total, sem plano de corte das peças.</Text>
       </View>
     );
