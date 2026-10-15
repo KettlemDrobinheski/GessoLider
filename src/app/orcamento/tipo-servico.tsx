@@ -23,7 +23,7 @@ export default function ServiceTypeScreen() {
 
   function handleContinue() {
     if (selectedService === null) return;
-    router.push({ pathname: '/orcamento/medidas', params: { servico: selectedService } });
+    router.push({ pathname: '/orcamento/cliente', params: { servico: selectedService } });
   }
 
   return (

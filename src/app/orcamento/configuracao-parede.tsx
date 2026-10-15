@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useBudgetClient } from '@/hooks/use-budget-client';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -7,8 +9,9 @@ import { Brand } from '@/constants/brand';
 import { parseWallBudgetInput, parseWallMeasurements } from '@/utils/wall-configuration';
 
 export default function WallConfigurationScreen() {
+  const { clientParams } = useBudgetClient();
   const { parede, orcamento, valores } = useLocalSearchParams<{ parede?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
-  const savedBudget = parseWallBudgetInput(orcamento);
+  const savedBudget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
   const measurements = savedBudget?.measurements ?? parseWallMeasurements(parede);
 
   if (!measurements) {
@@ -18,7 +21,7 @@ export default function WallConfigurationScreen() {
         <View style={styles.content}>
           <Text accessibilityRole="header" style={styles.title}>Informe as medidas da parede</Text>
           <Text style={styles.subtitle}>Volte à etapa Medidas para continuar a configuração.</Text>
-          <Pressable accessibilityRole="button" onPress={() => router.replace({ pathname: '/orcamento/medidas', params: { servico: 'wall' } })}
+          <Pressable accessibilityRole="button" onPress={() => router.replace({ pathname: '/orcamento/medidas', params: { ...clientParams, servico: 'wall' } })}
             style={styles.button}>
             <Text style={styles.buttonText}>Voltar às medidas</Text>
           </Pressable>
@@ -29,7 +32,7 @@ export default function WallConfigurationScreen() {
 
   return (
     <WallConfigurationForm key={JSON.stringify(savedBudget ?? measurements)} measurements={measurements} initialConfiguration={savedBudget?.configuration}
-      onContinue={(budget) => router.push({ pathname: '/orcamento/materiais', params: {
+      onContinue={(budget) => router.push({ pathname: '/orcamento/materiais', params: { ...clientParams,
         orcamento: JSON.stringify(budget), ...(typeof valores === 'string' ? { valores } : {}),
       } })} />
   );

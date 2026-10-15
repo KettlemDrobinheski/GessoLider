@@ -1,3 +1,6 @@
+import { useMemo } from 'react';
+import { ClientSummary } from '@/components/budget/client-summary';
+import { useBudgetClient } from '@/hooks/use-budget-client';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text } from 'react-native';
 import { BudgetButton, BudgetScreen } from '@/components/budget/budget-screen';
@@ -12,14 +15,16 @@ import { formatArea } from '@/utils/measurements';
 import { Brand } from '@/constants/brand';
 
 export default function CeilingSummaryScreen() {
+  const { client, clientParams } = useBudgetClient();
   const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
-  const budget = parseCeilingBudgetInput(orcamento);
+  const budget = useMemo(() => parseCeilingBudgetInput(orcamento), [orcamento]);
   const values = parseBudgetPricingInput(valores);
-  const materials = budget ? calculateCeiling({ ...budget.measurements, ...budget.configuration }) : null;
+  const materials = useMemo(() => budget ? calculateCeiling({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
   const pricing = budget && values ? calculateCeilingPricing(budget.measurements, values) : null;
-  const params = { ...(budget ? { orcamento: JSON.stringify(budget) } : {}), ...(values ? { valores: JSON.stringify(values) } : {}) };
-  function editMeasurements() { router.push({ pathname: '/orcamento/medidas', params: { ...params, servico: 'ceiling' } }); }
-  function editValues() { router.push({ pathname: '/orcamento/valores-forro', params }); }
+  const params = { ...clientParams, ...(budget ? { orcamento: JSON.stringify(budget) } : {}), ...(values ? { valores: JSON.stringify(values) } : {}) };
+  function editMeasurements() { router.push({ pathname: '/orcamento/medidas', params: { ...clientParams, ...params, servico: 'ceiling' } }); }
+  function editClient() { router.push({ pathname: '/orcamento/cliente', params: { ...params, servico: 'ceiling', retorno: 'ceiling' } }); }
+  function editValues() { router.push({ pathname: '/orcamento/valores-forro', params: { ...params, ...clientParams } }); }
   function back() { if (router.canGoBack()) router.back(); else editValues(); }
   if (!budget || !pricing || materials?.status !== 'valid') return (
     <BudgetScreen title="Resumo" activeStep={4} onBack={back}>
@@ -31,6 +36,7 @@ export default function CeilingSummaryScreen() {
   const measure = (value: number) => `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
   return (
     <BudgetScreen title="Resumo do orçamento" subtitle="Confira os dados e valores deste forro." activeStep={4} onBack={back}>
+      <ClientSummary client={client} onEdit={editClient} />
       <BudgetCard title="Serviço"><BudgetLine label="Tipo" value="Forro de drywall" /></BudgetCard>
       <BudgetCard title="Medidas">
         <BudgetLine label="Comprimento" value={measure(budget.measurements.length)} />

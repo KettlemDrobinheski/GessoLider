@@ -1,3 +1,6 @@
+import { useMemo } from 'react';
+import { ClientSummary } from '@/components/budget/client-summary';
+import { useBudgetClient } from '@/hooks/use-budget-client';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text } from 'react-native';
 import { BudgetButton, BudgetScreen } from '@/components/budget/budget-screen';
@@ -11,14 +14,16 @@ import { formatArea } from '@/utils/measurements';
 import { Brand } from '@/constants/brand';
 
 export default function WoodWallCladdingSummaryScreen() {
+  const { client, clientParams } = useBudgetClient();
   const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
-  const budget = parseWoodWallCladdingBudgetInput(orcamento);
+  const budget = useMemo(() => parseWoodWallCladdingBudgetInput(orcamento), [orcamento]);
   const values = parseBudgetPricingInput(valores);
-  const materials = budget ? calculateWoodWallCladding({ ...budget.measurements, ...budget.configuration }) : null;
+  const materials = useMemo(() => budget ? calculateWoodWallCladding({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
   const pricing = budget && values ? calculateWoodWallCladdingPricing(budget.measurements, values) : null;
-  const params = { ...(budget ? { orcamento: JSON.stringify(budget) } : {}), ...(values ? { valores: JSON.stringify(values) } : {}) };
-  function editMeasurements() { router.push({ pathname: '/orcamento/medidas', params: { ...params, servico: 'lining' } }); }
-  function editValues() { router.push({ pathname: '/orcamento/valores-revestimento', params }); }
+  const params = { ...clientParams, ...(budget ? { orcamento: JSON.stringify(budget) } : {}), ...(values ? { valores: JSON.stringify(values) } : {}) };
+  function editMeasurements() { router.push({ pathname: '/orcamento/medidas', params: { ...clientParams, ...params, servico: 'lining' } }); }
+  function editClient() { router.push({ pathname: '/orcamento/cliente', params: { ...params, servico: 'lining', retorno: 'lining' } }); }
+  function editValues() { router.push({ pathname: '/orcamento/valores-revestimento', params: { ...params, ...clientParams } }); }
   function back() { if (router.canGoBack()) router.back(); else editValues(); }
   if (!budget || !pricing || materials?.status !== 'valid') return (
     <BudgetScreen title="Resumo" activeStep={4} onBack={back}>
@@ -30,6 +35,7 @@ export default function WoodWallCladdingSummaryScreen() {
   const measure = (value: number) => `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
   return (
     <BudgetScreen title="Resumo do orçamento" subtitle="Confira os dados e valores deste revestimento." activeStep={4} onBack={back}>
+      <ClientSummary client={client} onEdit={editClient} />
       <BudgetCard title="Serviço"><BudgetLine label="Tipo" value="Revestimento em parede de madeira" /></BudgetCard>
       <BudgetCard title="Medidas">
         <BudgetLine label="Largura" value={measure(budget.measurements.width)} />

@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useBudgetClient } from '@/hooks/use-budget-client';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
@@ -13,22 +15,23 @@ import { parseWallBudgetInput } from '@/utils/wall-configuration';
 import { BudgetButton } from '@/components/budget/budget-screen';
 
 export default function MaterialsScreen() {
+  const { clientParams } = useBudgetClient();
   const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
-  const budget = parseWallBudgetInput(orcamento);
-  const result = budget ? calculateWallMaterials({ ...budget.measurements, ...budget.configuration }) : null;
+  const budget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
+  const result = useMemo(() => budget ? calculateWallMaterials({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
 
   function handleBack() {
     if (router.canGoBack()) router.back();
-    else if (budget) router.replace({ pathname: '/orcamento/configuracao-parede', params: {
+    else if (budget) router.replace({ pathname: '/orcamento/configuracao-parede', params: { ...clientParams,
       orcamento: JSON.stringify(budget),
       ...(typeof valores === 'string' ? { valores } : {}),
     } });
-    else router.replace({ pathname: '/orcamento/medidas', params: { servico: 'wall' } });
+    else router.replace({ pathname: '/orcamento/medidas', params: { ...clientParams, servico: 'wall' } });
   }
 
   function handleContinue() {
     if (!budget || result?.status !== 'valid') return;
-    router.push({ pathname: '/orcamento/valores', params: {
+    router.push({ pathname: '/orcamento/valores', params: { ...clientParams,
       orcamento: JSON.stringify(budget), ...(typeof valores === 'string' ? { valores } : {}),
     } });
   }

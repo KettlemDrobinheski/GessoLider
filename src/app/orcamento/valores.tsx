@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useBudgetClient } from '@/hooks/use-budget-client';
 import { BudgetValuesForm } from '@/components/budget/budget-values-form';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text } from 'react-native';
@@ -10,14 +12,15 @@ import { parseWallBudgetInput } from '@/utils/wall-configuration';
 import { parseWallPricingInput } from '@/utils/wall-pricing';
 
 export default function ValuesScreen() {
+  const { clientParams } = useBudgetClient();
   const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
-  const budget = parseWallBudgetInput(orcamento);
+  const budget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
   const initialValues = parseWallPricingInput(valores);
-  const materials = budget ? calculateWallMaterials({ ...budget.measurements, ...budget.configuration }) : null;
+  const materials = useMemo(() => budget ? calculateWallMaterials({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
 
   function handleBack() {
     if (router.canGoBack()) router.back();
-    else router.replace({ pathname: '/orcamento/materiais', params: {
+    else router.replace({ pathname: '/orcamento/materiais', params: { ...clientParams,
       ...(budget ? { orcamento: JSON.stringify(budget) } : {}),
       ...(initialValues ? { valores: JSON.stringify(initialValues) } : {}),
     } });
@@ -35,7 +38,7 @@ export default function ValuesScreen() {
   return <BudgetValuesForm key={JSON.stringify({ budget, initialValues })} billingArea={materials.wallArea} initialValues={initialValues} onBack={handleBack}
     areaNote="A cobrança utiliza a área da parede, sem multiplicar pela quantidade de lados ou pela margem de perda."
     calculatePricing={(values) => calculateWallPricing(budget.measurements, values)}
-    onContinue={(values) => router.push({ pathname: '/orcamento/resumo', params: { orcamento: JSON.stringify(budget), valores: JSON.stringify(values) } })} />;
+    onContinue={(values) => router.push({ pathname: '/orcamento/resumo', params: { ...clientParams, orcamento: JSON.stringify(budget), valores: JSON.stringify(values) } })} />;
 }
 
 const styles = StyleSheet.create({ note: { color: '#60706A', fontSize: 14, lineHeight: 21 } });

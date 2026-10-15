@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useBudgetClient } from '@/hooks/use-budget-client';
 import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BudgetButton, BudgetScreen } from '@/components/budget/budget-screen';
@@ -10,12 +12,13 @@ import { parseCeilingBudgetInput, parseCeilingMeasurements } from '@/utils/ceili
 import { formatArea } from '@/utils/measurements';
 
 export default function CeilingConfigurationScreen() {
+  const { clientParams } = useBudgetClient();
   const { forro, orcamento, valores } = useLocalSearchParams<{ forro?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
-  const savedBudget = parseCeilingBudgetInput(orcamento);
+  const savedBudget = useMemo(() => parseCeilingBudgetInput(orcamento), [orcamento]);
   const measurements = savedBudget?.measurements ?? parseCeilingMeasurements(forro);
   function back() {
     if (router.canGoBack()) router.back();
-    else router.replace({ pathname: '/orcamento/medidas', params: {
+    else router.replace({ pathname: '/orcamento/medidas', params: { ...clientParams,
       servico: 'ceiling', ...(savedBudget ? { orcamento: JSON.stringify(savedBudget) } : {}),
       ...(typeof valores === 'string' ? { valores } : {}),
     } });
@@ -28,7 +31,7 @@ export default function CeilingConfigurationScreen() {
   );
   return <CeilingConfigurationForm key={JSON.stringify(savedBudget ?? measurements)} measurements={measurements}
     initialConfiguration={savedBudget?.configuration} onBack={back}
-    onContinue={(budget) => router.push({ pathname: '/orcamento/materiais-forro', params: {
+    onContinue={(budget) => router.push({ pathname: '/orcamento/materiais-forro', params: { ...clientParams,
       orcamento: JSON.stringify(budget), ...(typeof valores === 'string' ? { valores } : {}),
     } })} />;
 }

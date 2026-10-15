@@ -1,17 +1,18 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Brand } from '@/constants/brand';
 
-const steps = ['Serviço', 'Medidas', 'Valores', 'Resumo'] as const;
+const steps = ['Serviço', 'Cliente', 'Medidas', 'Valores', 'Resumo'] as const;
 
-export function BudgetSteps({ activeStep }: { activeStep: 1 | 2 | 3 | 4 }) {
+export function BudgetSteps({ activeStep }: { activeStep: 1 | 2 | 3 | 4 | 'client' }) {
+  const activeIndex = activeStep === 'client' ? 1 : activeStep === 1 ? 0 : activeStep;
   return (
     <View style={styles.container}>
       {steps.map((label, index) => {
-        const active = activeStep === index + 1;
-        const completed = index + 1 < activeStep;
+        const active = activeIndex === index;
+        const completed = index < activeIndex;
         return (
           <View key={label} style={styles.step} accessible
-            accessibilityLabel={`Etapa ${index + 1} de 4: ${label}${active ? ', atual' : completed ? ', concluída' : ''}`}>
+            accessibilityLabel={`Etapa ${index + 1} de ${steps.length}: ${label}${active ? ', atual' : completed ? ', concluída' : ''}`}>
             <View style={[styles.circle, completed && styles.completedCircle, active && styles.activeCircle]}>
               <Text style={[styles.number, completed && styles.completedNumber, active && styles.activeNumber]}>{completed ? '✓' : index + 1}</Text>
             </View>

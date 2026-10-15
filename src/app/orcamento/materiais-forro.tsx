@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useBudgetClient } from '@/hooks/use-budget-client';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BudgetButton, BudgetScreen } from '@/components/budget/budget-screen';
 import { BudgetCard, BudgetLine } from '@/components/budget/budget-card';
@@ -7,18 +9,19 @@ import { parseCeilingBudgetInput } from '@/utils/ceiling';
 import { formatArea } from '@/utils/measurements';
 
 export default function CeilingMaterialsScreen() {
+  const { clientParams } = useBudgetClient();
   const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
-  const budget = parseCeilingBudgetInput(orcamento);
-  const result = budget ? calculateCeiling({ ...budget.measurements, ...budget.configuration }) : null;
+  const budget = useMemo(() => parseCeilingBudgetInput(orcamento), [orcamento]);
+  const result = useMemo(() => budget ? calculateCeiling({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
   const params = { ...(budget ? { orcamento: JSON.stringify(budget) } : {}), ...(typeof valores === 'string' ? { valores } : {}) };
   function back() {
     if (router.canGoBack()) router.back();
-    else if (budget) router.replace({ pathname: '/orcamento/configuracao-forro', params });
-    else router.replace({ pathname: '/orcamento/medidas', params: { servico: 'ceiling' } });
+    else if (budget) router.replace({ pathname: '/orcamento/configuracao-forro', params: { ...params, ...clientParams } });
+    else router.replace({ pathname: '/orcamento/medidas', params: { ...clientParams, servico: 'ceiling' } });
   }
   function next() {
     if (!budget || result?.status !== 'valid') return;
-    router.push({ pathname: '/orcamento/valores-forro', params });
+    router.push({ pathname: '/orcamento/valores-forro', params: { ...params, ...clientParams } });
   }
   return (
     <BudgetScreen title="Materiais Calculados" subtitle="Confira a estimativa para o forro de drywall." activeStep={3} onBack={back}

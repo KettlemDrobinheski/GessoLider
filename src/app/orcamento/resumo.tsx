@@ -1,3 +1,6 @@
+import { useMemo } from 'react';
+import { ClientSummary } from '@/components/budget/client-summary';
+import { useBudgetClient } from '@/hooks/use-budget-client';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { BudgetButton, BudgetScreen } from '@/components/budget/budget-screen';
@@ -13,22 +16,24 @@ import { parseWallBudgetInput } from '@/utils/wall-configuration';
 import { parseWallPricingInput } from '@/utils/wall-pricing';
 
 export default function SummaryScreen() {
+  const { client, clientParams } = useBudgetClient();
   const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
-  const budget = parseWallBudgetInput(orcamento);
+  const budget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
   const values = parseWallPricingInput(valores);
-  const materials = budget ? calculateWallMaterials({ ...budget.measurements, ...budget.configuration }) : null;
+  const materials = useMemo(() => budget ? calculateWallMaterials({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
   const pricing = budget && values && materials?.status === 'valid' ? calculateWallPricing(budget.measurements, values) : null;
-  const params = {
+  const params = { ...clientParams,
     ...(budget ? { orcamento: JSON.stringify(budget) } : {}),
     ...(values ? { valores: JSON.stringify(values) } : {}),
   };
 
+  function editClient() { router.push({ pathname: '/orcamento/cliente', params: { ...params, servico: 'wall', retorno: 'wall' } }); }
   function editValues() {
-    router.push({ pathname: '/orcamento/valores', params });
+    router.push({ pathname: '/orcamento/valores', params: { ...params, ...clientParams } });
   }
 
   function editMeasurements() {
-    router.push({ pathname: '/orcamento/medidas', params: { ...params, servico: 'wall' } });
+    router.push({ pathname: '/orcamento/medidas', params: { ...clientParams, ...params, servico: 'wall' } });
   }
 
   function handleBack() {
@@ -55,6 +60,7 @@ export default function SummaryScreen() {
   const configuration = budget.configuration;
   return (
     <BudgetScreen title="Resumo do orçamento" subtitle="Confira os dados e valores desta parede." activeStep={4} onBack={handleBack}>
+      <ClientSummary client={client} onEdit={editClient} />
       <BudgetCard title="Serviço">
         <BudgetLine label="Tipo" value="Parede" />
       </BudgetCard>

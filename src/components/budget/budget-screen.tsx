@@ -7,7 +7,7 @@ import { Brand } from '@/constants/brand';
 import { BudgetSteps } from './budget-steps';
 
 type Props = PropsWithChildren<{
-  title: string; subtitle?: string; activeStep: 2 | 3 | 4; onBack: () => void; footer?: ReactNode; keyboard?: boolean;
+  title: string; subtitle?: string; activeStep: 2 | 3 | 4 | 'client'; onBack: () => void; footer?: ReactNode; keyboard?: boolean;
 }>;
 
 export function BudgetScreen({ title, subtitle, activeStep, onBack, footer, keyboard = false, children }: Props) {

@@ -1,3 +1,4 @@
+import { useBudgetClient } from '@/hooks/use-budget-client';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -16,6 +17,7 @@ import { WallConfigurationSummary } from './wall-configuration-summary';
 type Props = { measurements: WallMeasurements; initialConfiguration?: WallConfiguration; onContinue?: (budget: WallBudgetInput) => void };
 
 export function WallConfigurationForm({ measurements, initialConfiguration, onContinue }: Props) {
+  const { clientParams } = useBudgetClient();
   const [draft, setDraft] = useState<WallConfigurationDraft>({
     boardType: initialConfiguration?.boardType ?? null,
     profileWidth: initialConfiguration?.profileWidth ?? null,
@@ -34,7 +36,7 @@ export function WallConfigurationForm({ measurements, initialConfiguration, onCo
 
   function handleBack() {
     if (router.canGoBack()) router.back();
-    else router.replace({ pathname: '/orcamento/medidas', params: { servico: measurements.service } });
+    else router.replace({ pathname: '/orcamento/medidas', params: { ...clientParams, servico: measurements.service } });
   }
 
   function handleContinue() {

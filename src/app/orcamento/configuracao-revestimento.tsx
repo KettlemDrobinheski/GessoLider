@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useBudgetClient } from '@/hooks/use-budget-client';
 import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BudgetButton, BudgetScreen } from '@/components/budget/budget-screen';
@@ -10,12 +12,13 @@ import { parseWoodWallCladdingBudgetInput, parseWoodWallCladdingMeasurements } f
 import { formatArea } from '@/utils/measurements';
 
 export default function WoodWallCladdingConfigurationScreen() {
+  const { clientParams } = useBudgetClient();
   const { revestimento, orcamento, valores } = useLocalSearchParams<{ revestimento?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
-  const savedBudget = parseWoodWallCladdingBudgetInput(orcamento);
+  const savedBudget = useMemo(() => parseWoodWallCladdingBudgetInput(orcamento), [orcamento]);
   const measurements = savedBudget?.measurements ?? parseWoodWallCladdingMeasurements(revestimento);
   function back() {
     if (router.canGoBack()) router.back();
-    else router.replace({ pathname: '/orcamento/medidas', params: {
+    else router.replace({ pathname: '/orcamento/medidas', params: { ...clientParams,
       servico: 'lining', ...(savedBudget ? { orcamento: JSON.stringify(savedBudget) } : {}),
       ...(typeof valores === 'string' ? { valores } : {}),
     } });
@@ -28,7 +31,7 @@ export default function WoodWallCladdingConfigurationScreen() {
   );
   return <WoodWallCladdingConfigurationForm key={JSON.stringify(savedBudget ?? measurements)} measurements={measurements}
     initialConfiguration={savedBudget?.configuration} onBack={back}
-    onContinue={(budget) => router.push({ pathname: '/orcamento/materiais-revestimento', params: {
+    onContinue={(budget) => router.push({ pathname: '/orcamento/materiais-revestimento', params: { ...clientParams,
       orcamento: JSON.stringify(budget), ...(typeof valores === 'string' ? { valores } : {}),
     } })} />;
 }
