@@ -1,3 +1,4 @@
+import { CompanySummary } from '@/components/budget/company-summary';
 import { useMemo } from 'react';
 import { ClientSummary } from '@/components/budget/client-summary';
 import { useBudgetClient } from '@/hooks/use-budget-client';
@@ -60,6 +61,7 @@ export default function SummaryScreen() {
   const configuration = budget.configuration;
   return (
     <BudgetScreen title="Resumo do orçamento" subtitle="Confira os dados e valores desta parede." activeStep={4} onBack={handleBack}>
+      <CompanySummary />
       <ClientSummary client={client} onEdit={editClient} />
       <BudgetCard title="Serviço">
         <BudgetLine label="Tipo" value="Parede" />

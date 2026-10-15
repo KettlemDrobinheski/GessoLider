@@ -6,6 +6,11 @@ export const emptyClient: ClientData = {
 export const normalizePhone = (value: string) => value.replace(/\D/g, '');
 export const normalizeCep = (value: string) => value.replace(/\D/g, '');
 
+export function validatePhone(value: string): boolean {
+  const phone = value.trim();
+  return !phone || (/^[\d\s()+-]+$/.test(phone) && /^[1-9]{2}\d{8,9}$/.test(normalizePhone(phone)));
+}
+
 export function formatPhone(value: string): string {
   const digits = normalizePhone(value);
   if (!digits) return '';
@@ -24,7 +29,7 @@ export function validateClient(draft: ClientData): { value: ClientData | null; e
   const value = Object.fromEntries(Object.entries(draft).map(([key, text]) => [key, text.trim()])) as ClientData;
   const errors: Partial<Record<keyof ClientData, string>> = {};
   if (!value.name) errors.name = 'Informe o nome do cliente.';
-  if (value.phone && (!/^[\d\s()+-]+$/.test(value.phone) || !/^[1-9]{2}\d{8,9}$/.test(normalizePhone(value.phone)))) {
+  if (!validatePhone(value.phone)) {
     errors.phone = 'Informe um telefone com DDD e 10 ou 11 dígitos.';
   }
   if (value.cep && (!/^[\d\s-]+$/.test(value.cep) || normalizeCep(value.cep).length !== 8)) errors.cep = 'Informe um CEP com 8 dígitos.';

@@ -7,10 +7,10 @@ import { Brand } from '@/constants/brand';
 import { BudgetSteps } from './budget-steps';
 
 type Props = PropsWithChildren<{
-  title: string; subtitle?: string; activeStep: 2 | 3 | 4 | 'client'; onBack: () => void; footer?: ReactNode; keyboard?: boolean;
+  title: string; subtitle?: string; activeStep?: 2 | 3 | 4 | 'client'; headerTitle?: string; onBack: () => void; footer?: ReactNode; keyboard?: boolean;
 }>;
 
-export function BudgetScreen({ title, subtitle, activeStep, onBack, footer, keyboard = false, children }: Props) {
+export function BudgetScreen({ title, subtitle, activeStep, headerTitle = 'Novo Orçamento', onBack, footer, keyboard = false, children }: Props) {
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="dark" />
@@ -19,12 +19,12 @@ export function BudgetScreen({ title, subtitle, activeStep, onBack, footer, keyb
           <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={onBack} style={styles.backButton}>
             <SymbolView name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} size={24} tintColor={Brand.dark} />
           </Pressable>
-          <Text accessibilityRole="header" style={styles.headerTitle}>Novo Orçamento</Text>
+          <Text accessibilityRole="header" style={styles.headerTitle}>{headerTitle}</Text>
           <View style={styles.headerBalance} />
         </View>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.content}>
-            <BudgetSteps activeStep={activeStep} />
+            {activeStep !== undefined && <BudgetSteps activeStep={activeStep} />}
             <View style={styles.introduction}>
               <Text accessibilityRole="header" style={styles.title}>{title}</Text>
               {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}

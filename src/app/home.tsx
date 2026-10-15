@@ -26,6 +26,10 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
+          <Pressable accessibilityRole="button" onPress={() => router.push('/configuracoes/empresa')} style={styles.settings}>
+            <Text style={styles.link}>Dados da GessoLider / profissional</Text>
+          </Pressable>
+
           <View style={styles.grid}>
             <View style={styles.row}>
               <ShortcutCard title="Novo Orçamento" icon={{ ios: 'doc.badge.plus', android: 'note_add', web: 'note_add' }} onPress={() => router.push('/orcamento/tipo-servico')} />
@@ -67,6 +71,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: '700', color: Brand.dark },
   subtitle: { fontSize: 14, lineHeight: 21, color: '#60706A' },
   notification: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#DFE8E3', borderRadius: 14 },
+  settings: { minHeight: 48, justifyContent: 'center', padding: 14, borderWidth: 1, borderColor: '#C5CECA', borderRadius: 12 },
   grid: { gap: 12 },
   row: { flexDirection: 'row', gap: 12 },
   banner: { backgroundColor: Brand.dark, borderRadius: 18, padding: 20, overflow: 'hidden', justifyContent: 'center', minHeight: 144 },

@@ -1,3 +1,4 @@
+import { CompanySummary } from '@/components/budget/company-summary';
 import { useMemo } from 'react';
 import { ClientSummary } from '@/components/budget/client-summary';
 import { useBudgetClient } from '@/hooks/use-budget-client';
@@ -36,6 +37,7 @@ export default function CeilingSummaryScreen() {
   const measure = (value: number) => `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
   return (
     <BudgetScreen title="Resumo do orçamento" subtitle="Confira os dados e valores deste forro." activeStep={4} onBack={back}>
+      <CompanySummary />
       <ClientSummary client={client} onEdit={editClient} />
       <BudgetCard title="Serviço"><BudgetLine label="Tipo" value="Forro de drywall" /></BudgetCard>
       <BudgetCard title="Medidas">
