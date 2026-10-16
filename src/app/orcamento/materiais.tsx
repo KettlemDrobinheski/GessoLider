@@ -16,7 +16,7 @@ import { BudgetButton } from '@/components/budget/budget-screen';
 
 export default function MaterialsScreen() {
   const { clientParams } = useBudgetClient();
-  const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
+  const { orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const budget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
   const result = useMemo(() => budget ? calculateWallMaterials({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
 
@@ -32,6 +32,7 @@ export default function MaterialsScreen() {
   function handleContinue() {
     if (!budget || result?.status !== 'valid') return;
     router.push({ pathname: '/orcamento/valores', params: { ...clientParams,
+      ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}),
       orcamento: JSON.stringify(budget), ...(typeof valores === 'string' ? { valores } : {}),
     } });
   }

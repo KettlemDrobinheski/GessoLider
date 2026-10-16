@@ -11,7 +11,7 @@ import { parseBudgetPricingInput } from '@/utils/budget-pricing';
 
 export default function CeilingValuesScreen() {
   const { clientParams } = useBudgetClient();
-  const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
+  const { orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const budget = useMemo(() => parseCeilingBudgetInput(orcamento), [orcamento]);
   const initialValues = parseBudgetPricingInput(valores);
   const result = useMemo(() => budget ? calculateCeiling({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
@@ -31,6 +31,7 @@ export default function CeilingValuesScreen() {
     areaNote="A cobrança utiliza a área do forro, sem aplicar a margem de perda."
     calculatePricing={(values) => calculateCeilingPricing(budget.measurements, values)}
     onContinue={(values) => router.push({ pathname: '/orcamento/resumo-forro', params: { ...clientParams,
+      ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}),
       orcamento: JSON.stringify(budget), valores: JSON.stringify(values),
     } })} />;
 }

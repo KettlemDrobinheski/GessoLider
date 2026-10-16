@@ -10,7 +10,7 @@ import { parseWallBudgetInput, parseWallMeasurements } from '@/utils/wall-config
 
 export default function WallConfigurationScreen() {
   const { clientParams } = useBudgetClient();
-  const { parede, orcamento, valores } = useLocalSearchParams<{ parede?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
+  const { parede, orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ parede?: string | string[]; orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const savedBudget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
   const measurements = savedBudget?.measurements ?? parseWallMeasurements(parede);
 
@@ -33,6 +33,7 @@ export default function WallConfigurationScreen() {
   return (
     <WallConfigurationForm key={JSON.stringify(savedBudget ?? measurements)} measurements={measurements} initialConfiguration={savedBudget?.configuration}
       onContinue={(budget) => router.push({ pathname: '/orcamento/materiais', params: { ...clientParams,
+        ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}),
         orcamento: JSON.stringify(budget), ...(typeof valores === 'string' ? { valores } : {}),
       } })} />
   );

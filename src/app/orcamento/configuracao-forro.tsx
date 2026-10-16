@@ -13,7 +13,7 @@ import { formatArea } from '@/utils/measurements';
 
 export default function CeilingConfigurationScreen() {
   const { clientParams } = useBudgetClient();
-  const { forro, orcamento, valores } = useLocalSearchParams<{ forro?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
+  const { forro, orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ forro?: string | string[]; orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const savedBudget = useMemo(() => parseCeilingBudgetInput(orcamento), [orcamento]);
   const measurements = savedBudget?.measurements ?? parseCeilingMeasurements(forro);
   function back() {
@@ -32,6 +32,7 @@ export default function CeilingConfigurationScreen() {
   return <CeilingConfigurationForm key={JSON.stringify(savedBudget ?? measurements)} measurements={measurements}
     initialConfiguration={savedBudget?.configuration} onBack={back}
     onContinue={(budget) => router.push({ pathname: '/orcamento/materiais-forro', params: { ...clientParams,
+      ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}),
       orcamento: JSON.stringify(budget), ...(typeof valores === 'string' ? { valores } : {}),
     } })} />;
 }

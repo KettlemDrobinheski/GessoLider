@@ -10,10 +10,10 @@ import { formatArea } from '@/utils/measurements';
 
 export default function WoodWallCladdingMaterialsScreen() {
   const { clientParams } = useBudgetClient();
-  const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
+  const { orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const budget = useMemo(() => parseWoodWallCladdingBudgetInput(orcamento), [orcamento]);
   const result = useMemo(() => budget ? calculateWoodWallCladding({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
-  const params = { ...(budget ? { orcamento: JSON.stringify(budget) } : {}), ...(typeof valores === 'string' ? { valores } : {}) };
+  const params = { ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}), ...(budget ? { orcamento: JSON.stringify(budget) } : {}), ...(typeof valores === 'string' ? { valores } : {}) };
   function back() {
     if (router.canGoBack()) router.back();
     else if (budget) router.replace({ pathname: '/orcamento/configuracao-revestimento', params: { ...params, ...clientParams } });

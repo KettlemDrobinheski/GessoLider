@@ -23,7 +23,7 @@ import { dimensionFields, dimensionLabels, validateMeasurements } from '@/utils/
 import { parseWallBudgetInput } from '@/utils/wall-configuration';
 
 export default function MeasurementsScreen() {
-  const { servico, orcamento, valores } = useLocalSearchParams<{ servico?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
+  const { servico, orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ servico?: string | string[]; orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const savedBudget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
   const savedCeiling = useMemo(() => parseCeilingBudgetInput(orcamento), [orcamento]);
   const savedCladding = useMemo(() => parseWoodWallCladdingBudgetInput(orcamento), [orcamento]);
@@ -46,10 +46,11 @@ export default function MeasurementsScreen() {
 
   return <MeasurementsForm key={JSON.stringify({ service: service.id, savedBudget, savedCeiling, savedCladding })} service={service}
     savedCladding={service.id === 'lining' ? savedCladding : null}
-    savedBudget={service.id === 'wall' ? savedBudget : null} savedCeiling={service.id === 'ceiling' ? savedCeiling : null} savedValues={typeof valores === 'string' ? valores : undefined} />;
+    savedBudget={service.id === 'wall' ? savedBudget : null} savedCeiling={service.id === 'ceiling' ? savedCeiling : null} savedValues={typeof valores === 'string' ? valores : undefined}
+    savedId={typeof orcamentoSalvoId === 'string' ? orcamentoSalvoId : undefined} />;
 }
 
-function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, savedValues }: { service: ServiceOption; savedBudget: WallBudgetInput | null; savedCeiling: CeilingBudgetInput | null; savedCladding: WoodWallCladdingBudgetInput | null; savedValues?: string }) {
+function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, savedValues, savedId }: { service: ServiceOption; savedBudget: WallBudgetInput | null; savedCeiling: CeilingBudgetInput | null; savedCladding: WoodWallCladdingBudgetInput | null; savedValues?: string; savedId?: string }) {
   const { clientParams } = useBudgetClient();
   const savedMeasurements = savedBudget?.measurements;
   const [dimensions, setDimensions] = useState<MeasurementDraft>({
@@ -89,6 +90,7 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
     if (validation.value.service === 'lining') {
       const measurements = { service: 'lining' as const, width: validation.value.length, height: validation.value.height };
       router.push({ pathname: '/orcamento/configuracao-revestimento', params: { ...clientParams,
+        ...(savedId ? { orcamentoSalvoId: savedId } : {}),
         revestimento: JSON.stringify(measurements),
         ...(savedCladding ? { orcamento: JSON.stringify({ ...savedCladding, measurements }) } : {}),
         ...(savedValues ? { valores: savedValues } : {}),
@@ -98,6 +100,7 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
     if (validation.value.service === 'ceiling') {
       const measurements = validation.value;
       router.push({ pathname: '/orcamento/configuracao-forro', params: { ...clientParams,
+        ...(savedId ? { orcamentoSalvoId: savedId } : {}),
         forro: JSON.stringify(measurements),
         ...(savedCeiling ? { orcamento: JSON.stringify({ ...savedCeiling, measurements }) } : {}),
         ...(savedValues ? { valores: savedValues } : {}),
@@ -112,6 +115,7 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
       areas: { gross: areas.gross, openings: areas.openings, net: areas.net },
     };
     router.push({ pathname: '/orcamento/configuracao-parede', params: { ...clientParams,
+      ...(savedId ? { orcamentoSalvoId: savedId } : {}),
       parede: JSON.stringify(measurements),
       ...(savedBudget ? { orcamento: JSON.stringify({ ...savedBudget, measurements }) } : {}),
       ...(savedValues ? { valores: savedValues } : {}),

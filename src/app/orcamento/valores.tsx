@@ -13,7 +13,7 @@ import { parseWallPricingInput } from '@/utils/wall-pricing';
 
 export default function ValuesScreen() {
   const { clientParams } = useBudgetClient();
-  const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
+  const { orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const budget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
   const initialValues = parseWallPricingInput(valores);
   const materials = useMemo(() => budget ? calculateWallMaterials({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
@@ -38,7 +38,8 @@ export default function ValuesScreen() {
   return <BudgetValuesForm key={JSON.stringify({ budget, initialValues })} billingArea={materials.wallArea} initialValues={initialValues} onBack={handleBack}
     areaNote="A cobrança utiliza a área da parede, sem multiplicar pela quantidade de lados ou pela margem de perda."
     calculatePricing={(values) => calculateWallPricing(budget.measurements, values)}
-    onContinue={(values) => router.push({ pathname: '/orcamento/resumo', params: { ...clientParams, orcamento: JSON.stringify(budget), valores: JSON.stringify(values) } })} />;
+    onContinue={(values) => router.push({ pathname: '/orcamento/resumo', params: { ...clientParams,
+      ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}), orcamento: JSON.stringify(budget), valores: JSON.stringify(values) } })} />;
 }
 
 const styles = StyleSheet.create({ note: { color: '#60706A', fontSize: 14, lineHeight: 21 } });

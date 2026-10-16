@@ -10,8 +10,8 @@ const summaryRoutes = { wall: '/orcamento/resumo', ceiling: '/orcamento/resumo-f
 
 export default function ClientScreen() {
   const navigation = useNavigation();
-  const { servico, orcamento, valores, retorno } = useLocalSearchParams<{
-    servico?: string | string[]; orcamento?: string | string[]; valores?: string | string[]; retorno?: string | string[];
+  const { servico, orcamento, valores, retorno, orcamentoSalvoId } = useLocalSearchParams<{
+    servico?: string | string[]; orcamento?: string | string[]; valores?: string | string[]; retorno?: string | string[]; orcamentoSalvoId?: string | string[];
   }>();
   const { client } = useBudgetClient();
   const service = typeof servico === 'string' ? serviceOptions.find((option) => option.id === servico) : undefined;
@@ -20,6 +20,7 @@ export default function ClientScreen() {
   function next(value: ClientData) {
     if (!service) return;
     const params = withClient({ servico: service.id,
+      ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}),
       ...(typeof orcamento === 'string' ? { orcamento } : {}), ...(typeof valores === 'string' ? { valores } : {}),
     }, value);
     if (summary) {

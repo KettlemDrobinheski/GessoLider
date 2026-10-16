@@ -14,15 +14,19 @@ import { parseWoodWallCladdingBudgetInput } from '@/utils/wood-wall-cladding';
 import { parseBudgetPricingInput } from '@/utils/budget-pricing';
 import { formatArea } from '@/utils/measurements';
 import { Brand } from '@/constants/brand';
+import { useCompanyProfile } from '@/hooks/use-company-profile';
+import { buildSavedBudgetInput } from '@/utils/budget-history';
+import { SaveBudgetAction } from '@/components/budget/save-budget-action';
 
 export default function WoodWallCladdingSummaryScreen() {
+  const { profile, loading: companyLoading, loadError: companyError } = useCompanyProfile();
   const { client, clientParams } = useBudgetClient();
-  const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
+  const { orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const budget = useMemo(() => parseWoodWallCladdingBudgetInput(orcamento), [orcamento]);
   const values = parseBudgetPricingInput(valores);
   const materials = useMemo(() => budget ? calculateWoodWallCladding({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
   const pricing = budget && values ? calculateWoodWallCladdingPricing(budget.measurements, values) : null;
-  const params = { ...clientParams, ...(budget ? { orcamento: JSON.stringify(budget) } : {}), ...(values ? { valores: JSON.stringify(values) } : {}) };
+  const params = { ...clientParams, ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}), ...(budget ? { orcamento: JSON.stringify(budget) } : {}), ...(values ? { valores: JSON.stringify(values) } : {}) };
   function editMeasurements() { router.push({ pathname: '/orcamento/medidas', params: { ...clientParams, ...params, servico: 'lining' } }); }
   function editClient() { router.push({ pathname: '/orcamento/cliente', params: { ...params, servico: 'lining', retorno: 'lining' } }); }
   function editValues() { router.push({ pathname: '/orcamento/valores-revestimento', params: { ...params, ...clientParams } }); }
@@ -53,6 +57,9 @@ export default function WoodWallCladdingSummaryScreen() {
       {!!pricing.notes.trim() && <BudgetCard title="Observações"><Text style={styles.text}>{pricing.notes}</Text></BudgetCard>}
       <BudgetButton label="Editar medidas/configuração" onPress={editMeasurements} />
       <BudgetButton label="Editar valores" onPress={editValues} />
+      <SaveBudgetAction input={!companyLoading && !companyError ? buildSavedBudgetInput('lining', budget, pricing, profile, client) : null}
+        unavailableMessage={companyError ? 'Não foi possível carregar os dados da empresa. Tente novamente antes de salvar.' : undefined}
+        savedId={typeof orcamentoSalvoId === 'string' ? orcamentoSalvoId : undefined} />
       <BudgetDocumentPreview source={{ service: 'lining', budget, materials, pricing }} client={client} />
     </BudgetScreen>
   );

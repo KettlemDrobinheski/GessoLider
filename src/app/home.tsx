@@ -1,15 +1,17 @@
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomBar } from '@/components/home/bottom-bar';
-import { RecentBudgetCard } from '@/components/home/recent-budget-card';
+import { BudgetHistoryList } from '@/components/history/budget-history-list';
 import { ShortcutCard } from '@/components/home/shortcut-card';
 import { Brand } from '@/constants/brand';
-import { mockRecentBudgets } from '@/mocks/recent-budgets';
+import { useSavedBudgets } from '@/hooks/use-saved-budgets';
+import { savedBudgetDetailsRoute } from '@/utils/budget-history';
 
 export default function HomeScreen() {
+  const { budgets, loading, error, retry } = useSavedBudgets();
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="dark" />
@@ -49,11 +51,12 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text accessibilityRole="header" style={styles.sectionTitle}>Orçamentos recentes</Text>
-              <Pressable disabled accessibilityRole="button" accessibilityState={{ disabled: true }} style={styles.seeAll}>
+              <Pressable accessibilityRole="button" onPress={() => router.push('/orcamentos' as Href)} style={styles.seeAll}>
                 <Text style={styles.link}>Ver todos</Text>
               </Pressable>
             </View>
-            {mockRecentBudgets.map((budget) => <RecentBudgetCard key={budget.id} budget={budget} />)}
+            <BudgetHistoryList budgets={budgets} loading={loading} error={error} onRetry={retry} recentLimit={3}
+              onOpen={(id) => router.push(savedBudgetDetailsRoute(id))} />
           </View>
         </View>
       </ScrollView>

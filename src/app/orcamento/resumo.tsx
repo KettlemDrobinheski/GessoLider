@@ -16,15 +16,20 @@ import { calculateWallPricing } from '@/domain/calculations/wallPricing';
 import { formatArea } from '@/utils/measurements';
 import { parseWallBudgetInput } from '@/utils/wall-configuration';
 import { parseWallPricingInput } from '@/utils/wall-pricing';
+import { useCompanyProfile } from '@/hooks/use-company-profile';
+import { buildSavedBudgetInput } from '@/utils/budget-history';
+import { SaveBudgetAction } from '@/components/budget/save-budget-action';
 
 export default function SummaryScreen() {
+  const { profile, loading: companyLoading, loadError: companyError } = useCompanyProfile();
   const { client, clientParams } = useBudgetClient();
-  const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
+  const { orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const budget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
   const values = parseWallPricingInput(valores);
   const materials = useMemo(() => budget ? calculateWallMaterials({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
   const pricing = budget && values && materials?.status === 'valid' ? calculateWallPricing(budget.measurements, values) : null;
   const params = { ...clientParams,
+    ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}),
     ...(budget ? { orcamento: JSON.stringify(budget) } : {}),
     ...(values ? { valores: JSON.stringify(values) } : {}),
   };
@@ -85,6 +90,9 @@ export default function SummaryScreen() {
         <BudgetButton label="Editar medidas/configuração" onPress={editMeasurements} />
         <BudgetButton label="Editar valores" onPress={editValues} />
       </View>
+      <SaveBudgetAction input={!companyLoading && !companyError ? buildSavedBudgetInput('wall', budget, pricing, profile, client) : null}
+        unavailableMessage={companyError ? 'Não foi possível carregar os dados da empresa. Tente novamente antes de salvar.' : undefined}
+        savedId={typeof orcamentoSalvoId === 'string' ? orcamentoSalvoId : undefined} />
       <BudgetDocumentPreview source={{ service: 'wall', budget, materials, pricing }} client={client} />
     </BudgetScreen>
   );

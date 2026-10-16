@@ -13,7 +13,7 @@ import { formatArea } from '@/utils/measurements';
 
 export default function WoodWallCladdingConfigurationScreen() {
   const { clientParams } = useBudgetClient();
-  const { revestimento, orcamento, valores } = useLocalSearchParams<{ revestimento?: string | string[]; orcamento?: string | string[]; valores?: string | string[] }>();
+  const { revestimento, orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ revestimento?: string | string[]; orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const savedBudget = useMemo(() => parseWoodWallCladdingBudgetInput(orcamento), [orcamento]);
   const measurements = savedBudget?.measurements ?? parseWoodWallCladdingMeasurements(revestimento);
   function back() {
@@ -32,6 +32,7 @@ export default function WoodWallCladdingConfigurationScreen() {
   return <WoodWallCladdingConfigurationForm key={JSON.stringify(savedBudget ?? measurements)} measurements={measurements}
     initialConfiguration={savedBudget?.configuration} onBack={back}
     onContinue={(budget) => router.push({ pathname: '/orcamento/materiais-revestimento', params: { ...clientParams,
+      ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}),
       orcamento: JSON.stringify(budget), ...(typeof valores === 'string' ? { valores } : {}),
     } })} />;
 }

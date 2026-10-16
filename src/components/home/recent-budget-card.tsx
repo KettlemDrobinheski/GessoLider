@@ -1,37 +1,32 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { SavedBudget } from '@/types/saved-budget';
 import { Brand } from '@/constants/brand';
-
-export type RecentBudget = {
-  id: string;
-  title: string;
-  service: string;
-  dateLabel: string;
-  amountLabel: string;
-  status: 'Em edição' | 'Enviado' | 'Concluído';
-};
+import { formatBudgetHistoryDate, savedBudgetAmountLabel, savedBudgetServiceLabels, savedBudgetStatusLabels } from '@/utils/budget-history';
 
 const statusColors = {
-  'Em edição': { backgroundColor: '#FFF5DE', color: '#795C13' },
-  Enviado: { backgroundColor: '#EAF1FA', color: '#365D85' },
-  Concluído: { backgroundColor: '#E7F5EC', color: Brand.primary },
-};
+  draft: { backgroundColor: '#FFF5DE', color: '#795C13' },
+  sent: { backgroundColor: '#EAF1FA', color: '#365D85' },
+  approved: { backgroundColor: '#E7F5EC', color: Brand.primary },
+  rejected: { backgroundColor: '#FBEAEA', color: '#9B3232' },
+  completed: { backgroundColor: '#E7F5EC', color: Brand.primary },
+} as const;
 
-export function RecentBudgetCard({ budget }: { budget: RecentBudget }) {
+export function RecentBudgetCard({ budget, onPress }: { budget: SavedBudget; onPress: () => void }) {
   const colors = statusColors[budget.status];
   return (
-    <View style={styles.card}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <View style={styles.row}>
-        <Text style={styles.title}>{budget.title}</Text>
-        <Text style={styles.amount}>{budget.amountLabel}</Text>
+        <Text style={styles.title} numberOfLines={1}>{budget.client.name}</Text>
+        <Text style={styles.amount}>{savedBudgetAmountLabel(budget)}</Text>
       </View>
-      <Text style={styles.service}>{budget.service}</Text>
+      <Text style={styles.service}>{savedBudgetServiceLabels[budget.service]}</Text>
       <View style={styles.row}>
-        <Text style={styles.date}>{budget.dateLabel}</Text>
+        <Text style={styles.date}>Atualizado em {formatBudgetHistoryDate(budget.updatedAt)}</Text>
         <View style={[styles.badge, { backgroundColor: colors.backgroundColor }]}>
-          <Text style={[styles.status, { color: colors.color }]}>{budget.status}</Text>
+          <Text style={[styles.status, { color: colors.color }]}>{savedBudgetStatusLabels[budget.status]}</Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -44,4 +39,5 @@ const styles = StyleSheet.create({
   date: { color: '#60706A', fontSize: 12 },
   badge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   status: { fontSize: 12, fontWeight: '600' },
+  pressed: { opacity: 0.8 },
 });

@@ -10,7 +10,7 @@ import { parseBudgetPricingInput } from '@/utils/budget-pricing';
 
 export default function WoodWallCladdingValuesScreen() {
   const { clientParams } = useBudgetClient();
-  const { orcamento, valores } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[] }>();
+  const { orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const budget = useMemo(() => parseWoodWallCladdingBudgetInput(orcamento), [orcamento]);
   const initialValues = parseBudgetPricingInput(valores);
   const result = useMemo(() => budget ? calculateWoodWallCladding({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
@@ -30,6 +30,7 @@ export default function WoodWallCladdingValuesScreen() {
     areaNote="A cobrança utiliza a área do revestimento, sem aplicar a margem de perda."
     calculatePricing={(values) => calculateWoodWallCladdingPricing(budget.measurements, values)}
     onContinue={(values) => router.push({ pathname: '/orcamento/resumo-revestimento', params: { ...clientParams,
+      ...(typeof orcamentoSalvoId === 'string' ? { orcamentoSalvoId } : {}),
       orcamento: JSON.stringify(budget), valores: JSON.stringify(values),
     } })} />;
 }
