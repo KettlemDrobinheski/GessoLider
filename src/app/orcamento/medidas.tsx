@@ -131,7 +131,7 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
             <SymbolView name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} size={24} tintColor={Brand.dark} />
           </Pressable>
-          <Text accessibilityRole="header" style={styles.headerTitle}>Novo Orçamento</Text>
+          <Text accessibilityRole="header" style={styles.headerTitle}>{savedId ? 'Editar orçamento' : 'Novo orçamento'}</Text>
           <View style={styles.headerBalance} />
         </View>
 

@@ -6,6 +6,11 @@ import { documentFixtures } from './budget-document-fixtures.mjs';
 const { createSavedBudgetsRepository } = await import('../src/services/saved-budgets.ts');
 const { buildSavedBudgetInput, budgetHistoryState, formatBudgetHistoryDate, savedBudgetAmountLabel,
   savedBudgetDetailsRoute, savedBudgetEditRoute, savedBudgetServiceLabels, savedBudgetStatusLabels, saveBudgetRecord } = await import('../src/utils/budget-history.ts');
+const { parseWallBudgetInput } = await import('../src/utils/wall-configuration.ts');
+const { parseCeilingBudgetInput } = await import('../src/utils/ceiling.ts');
+const { parseWoodWallCladdingBudgetInput } = await import('../src/utils/wood-wall-cladding.ts');
+const { parseWallPricingInput } = await import('../src/utils/wall-pricing.ts');
+const { parseBudgetPricingInput } = await import('../src/utils/budget-pricing.ts');
 
 function memoryStorage() {
   const entries = new Map();
@@ -70,11 +75,12 @@ test('formats visible history fields and creates details navigation by persisted
   assert.deepEqual(savedBudgetDetailsRoute(record.id), { pathname: '/orcamentos/[id]', params: { id: 'persisted-id' } });
 });
 
-test('prepares an edit route with persisted inputs and only writes after an explicit save', async () => {
+test('opens each saved service with validated inputs and persists edits under the same ID', async () => {
   let sequence = 0;
-  const repository = createSavedBudgetsRepository(memoryStorage(), {
+  const storage = memoryStorage();
+  const repository = createSavedBudgetsRepository(storage, {
     createId: () => `edit-${++sequence}`,
-    now: () => `2026-10-0${sequence + 1}T10:00:00.000Z`,
+    now: () => `2026-10-${String(++sequence).padStart(2, '0')}T10:00:00.000Z`,
   });
   for (const source of sources()) {
     const input = buildSavedBudgetInput(source.service, source.budget, source.pricing, source.company, source.client);
@@ -83,19 +89,61 @@ test('prepares an edit route with persisted inputs and only writes after an expl
     assert.equal(route.pathname, '/orcamento/medidas');
     assert.equal(route.params.orcamentoSalvoId, saved.id);
     assert.equal(route.params.servico, saved.service);
-    assert.deepEqual(JSON.parse(route.params.orcamento), saved.budget);
-    assert.deepEqual(JSON.parse(route.params.valores), saved.pricing);
+    const parsedBudget = source.service === 'wall' ? parseWallBudgetInput(route.params.orcamento)
+      : source.service === 'ceiling' ? parseCeilingBudgetInput(route.params.orcamento)
+        : parseWoodWallCladdingBudgetInput(route.params.orcamento);
+    const parsedPricing = source.service === 'wall' ? parseWallPricingInput(route.params.valores) : parseBudgetPricingInput(route.params.valores);
+    assert.deepEqual(parsedBudget, saved.budget);
+    assert.deepEqual(parsedPricing, saved.pricing);
     assert.deepEqual(JSON.parse(route.params.cliente), saved.client);
 
     const beforeCancel = await repository.getById(saved.id);
     assert.deepEqual(beforeCancel, saved);
+    const countBeforeEdit = (await repository.list()).length;
 
-    const editedInput = buildSavedBudgetInput(saved.service, JSON.parse(route.params.orcamento),
-      { ...JSON.parse(route.params.valores), notes: 'Editado' }, saved.company, JSON.parse(route.params.cliente));
-    const edited = await saveBudgetRecord(repository, editedInput, route.params.orcamentoSalvoId);
+    const editedBudget = structuredClone(parsedBudget);
+    editedBudget.configuration.wastePercent = 10;
+    const editedClient = { ...saved.client, name: 'Cliente atualizado' };
+    const editedInput = buildSavedBudgetInput(saved.service, editedBudget,
+      { ...parsedPricing, notes: 'Editado' }, { ...saved.company, companyName: 'Perfil atual diferente' }, editedClient);
+    const edited = await saveBudgetRecord(repository, editedInput, route.params.orcamentoSalvoId).catch((cause) => {
+      throw new Error(`${saved.service} edit failed: ${cause.message}`);
+    });
     assert.equal(edited.id, saved.id);
     assert.equal(edited.pricing.notes, 'Editado');
-    assert.deepEqual(edited.budget, saved.budget);
+    assert.deepEqual(edited.budget, editedBudget);
+    assert.deepEqual(edited.client, editedClient);
     assert.deepEqual(edited.company, saved.company);
+    assert.notEqual(edited.updatedAt, saved.updatedAt);
+
+    const reloadedRepository = createSavedBudgetsRepository(storage);
+    const reloaded = await reloadedRepository.getById(saved.id);
+    assert.deepEqual(reloaded, edited);
+    assert.deepEqual((await reloadedRepository.list()).filter((record) => record.id === saved.id), [edited]);
+    assert.equal((await reloadedRepository.list()).length, countBeforeEdit);
   }
+});
+
+test('keeps the saved record unchanged when an edit is cancelled before saving', async () => {
+  const repository = createSavedBudgetsRepository(memoryStorage(), { createId: () => 'cancel-id', now: () => '2026-10-01T10:00:00.000Z' });
+  const source = sources()[0];
+  const saved = await repository.create(buildSavedBudgetInput(source.service, source.budget, source.pricing, source.company, source.client));
+  const route = savedBudgetEditRoute(saved);
+  JSON.parse(route.params.orcamento);
+  assert.deepEqual(await repository.getById(saved.id), saved);
+  assert.equal((await repository.list()).length, 1);
+});
+
+test('reports edit write failures without reporting success or creating another record', async () => {
+  const repository = createSavedBudgetsRepository(memoryStorage(), { createId: () => 'error-id', now: () => '2026-10-01T10:00:00.000Z' });
+  const source = sources()[0];
+  const saved = await repository.create(buildSavedBudgetInput(source.service, source.budget, source.pricing, source.company, source.client));
+  const failingWriter = {
+    create: (...args) => repository.create(...args),
+    update: async () => { throw new Error('storage write failed'); },
+  };
+  const input = buildSavedBudgetInput(saved.service, saved.budget, saved.pricing, saved.company, saved.client);
+  await assert.rejects(saveBudgetRecord(failingWriter, input, saved.id), /storage write failed/);
+  assert.deepEqual(await repository.getById(saved.id), saved);
+  assert.equal((await repository.list()).length, 1);
 });
