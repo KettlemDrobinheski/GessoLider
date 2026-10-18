@@ -10,13 +10,16 @@ export function CeilingMaterialResults({ result }: { result: CeilingResult }) {
   return (
     <View style={styles.container}>
       <MaterialCard name="Placa ST" measure="1,20 × 1,80 m" quantity={result.boards} unit="placa" />
-      <MaterialCard name="Perfil F530" measure="3 m" quantity={result.profiles} />
-      <MaterialCard name="Cantoneira" measure="3 m" quantity={result.angles} />
+      <MaterialCard name="Perfil F530" measure="3 m" quantity={result.profiles}
+        description={`${result.profileLines} linhas × ${result.profilesPerLine} peças por linha antes da perda.`} />
+      <MaterialCard name="Cantoneira" measure="3 m" quantity={result.angles}
+        description={`Peças por lado antes da perda (comprimento, largura, comprimento, largura): ${result.anglePiecesBySide.join(' + ')}.`} />
       <MaterialEstimateCard name="Parafuso G25 — caixa com 1.000 unidades"
         estimate={`Quantidade: ${result.screwBoxes.toLocaleString('pt-BR')} ${result.screwBoxes === 1 ? 'caixa' : 'caixas'}`}
         note={`Estimativa utilizada: ${result.screws.toLocaleString('pt-BR')} parafusos.`} />
       <MaterialEstimateCard name="Fita para juntas" estimate={`${measure(result.tapeMeters)} m`} />
       <MaterialEstimateCard name="Massa para juntas" estimate={`${measure(result.compoundKg)} kg`} />
+      <Text style={styles.note}>F530 e cantoneiras mostram uma contagem base por trecho independente, sem reaproveitar sobras entre linhas ou lados. Não inclui material adicional para emendas ou sobreposições; os quantitativos podem aumentar conforme a regra do sistema da obra. Confirme antes da compra.</Text>
       <Text style={styles.note}>{materialEstimateNotice}</Text>
     </View>
   );

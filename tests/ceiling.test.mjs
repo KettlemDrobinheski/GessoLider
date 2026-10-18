@@ -26,14 +26,26 @@ test('calculates F530 lines and 3 meter bars with 40 cm spacing', () => {
   const result = calculateCeiling(base);
   assert.equal(result.profileLines, 11);
   assert.equal(result.profileMeters, 55);
-  assert.equal(result.profiles, 19);
+  assert.equal(result.profilesPerLine, 2);
+  assert.equal(result.profiles, 22);
 });
 
 test('calculates F530 with 60 cm spacing', () => {
   const result = calculateCeiling({ ...base, spacingCm: 60 });
   assert.equal(result.profileLines, 8);
   assert.equal(result.profileMeters, 40);
-  assert.equal(result.profiles, 14);
+  assert.equal(result.profilesPerLine, 2);
+  assert.equal(result.profiles, 16);
+});
+
+test('counts commercial F530 pieces independently for each profile line', () => {
+  for (const [length, expectedPerLine] of [[2.9, 1], [3, 1], [3.01, 2]]) {
+    const result = calculateCeiling({ ...base, length, width: 0.1, wastePercent: 0 });
+    assert.equal(result.status, 'valid');
+    assert.equal(result.profileLines, 2);
+    assert.equal(result.profilesPerLine, expectedPerLine);
+    assert.equal(result.profiles, expectedPerLine * result.profileLines);
+  }
 });
 
 test('does not add a profile line at an exact decimal spacing multiple', () => {
@@ -44,12 +56,28 @@ test('calculates cantoneiras from the perimeter', () => {
   const result = calculateCeiling(base);
   assert.equal(result.perimeter, 18);
   assert.equal(result.angleMetersWithWaste, 18);
-  assert.equal(result.angles, 6);
+  assert.deepEqual(result.anglePiecesBySide, [2, 2, 2, 2]);
+  assert.equal(result.angles, 8);
+});
+
+test('counts corner angles per side when each side exceeds one commercial piece', () => {
+  const result = calculateCeiling({ ...base, length: 5, width: 5, wastePercent: 0 });
+  assert.equal(result.perimeter, 20);
+  assert.deepEqual(result.anglePiecesBySide, [2, 2, 2, 2]);
+  assert.equal(result.angles, 8);
+});
+
+test('counts commercial angle pieces independently for sides below, at and above 3 meters', () => {
+  for (const [side, expectedPerSide] of [[2.9, 1], [3, 1], [3.01, 2]]) {
+    const result = calculateCeiling({ ...base, length: side, width: side, wastePercent: 0 });
+    assert.deepEqual(result.anglePiecesBySide, Array(4).fill(expectedPerSide));
+    assert.equal(result.angles, expectedPerSide * 4);
+  }
 });
 
 for (const example of [
-  { wastePercent: 5, area: 21, boards: 10, profiles: 20, angles: 7, screws: 315, tape: 29.4, compound: 10.5 },
-  { wastePercent: 10, area: 22, boards: 11, profiles: 21, angles: 7, screws: 330, tape: 30.8, compound: 11 },
+  { wastePercent: 5, area: 21, boards: 10, profiles: 24, angles: 9, screws: 315, tape: 29.4, compound: 10.5 },
+  { wastePercent: 10, area: 22, boards: 11, profiles: 25, angles: 9, screws: 330, tape: 30.8, compound: 11 },
 ]) {
   test(`applies ${example.wastePercent}% waste to every material estimate`, () => {
     const result = calculateCeiling({ ...base, wastePercent: example.wastePercent });
@@ -58,6 +86,9 @@ for (const example of [
     assert.equal(result.boards, example.boards);
     assert.equal(result.profiles, example.profiles);
     assert.equal(result.angles, example.angles);
+    assert.equal(result.profileLines, 11);
+    assert.equal(result.profilesPerLine, 2);
+    assert.deepEqual(result.anglePiecesBySide, [2, 2, 2, 2]);
     assert.equal(result.screws, example.screws);
     assert.ok(Math.abs(result.profileMetersWithWaste - 55 * (1 + example.wastePercent / 100)) < 1e-10);
     assert.ok(Math.abs(result.angleMetersWithWaste - 18 * (1 + example.wastePercent / 100)) < 1e-10);
@@ -73,6 +104,14 @@ test('calculates G25 screws and boxes of 1000, rounding both up', () => {
   assert.equal(result.screws, 1500);
   assert.equal(result.screwBoxes, 2);
   assert.equal(calculateCeiling({ ...base, length: 1, width: 0.1 }).screws, 2);
+});
+
+test('applies the selected waste percentage once to per-segment piece counts', () => {
+  for (const [wastePercent, profiles, angles] of [[0, 22, 8], [5, 24, 9], [10, 25, 9]]) {
+    const result = calculateCeiling({ ...base, wastePercent });
+    assert.equal(result.profiles, profiles);
+    assert.equal(result.angles, angles);
+  }
 });
 
 test('calculates joint tape in meters without inventing rolls', () => {

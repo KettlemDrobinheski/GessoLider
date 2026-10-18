@@ -3,8 +3,9 @@ import type { CeilingInput } from '../../types/ceiling';
 
 export type CeilingValidResult = {
   status: 'valid'; area: number; areaWithWaste: number; spacingCm: 40 | 60; wastePercent: 0 | 5 | 10;
-  boards: number; profileLines: number; profileMeters: number; profileMetersWithWaste: number; profiles: number;
-  perimeter: number; angleMetersWithWaste: number; angles: number;
+  boards: number; profileLines: number; profileMeters: number; profileMetersWithWaste: number;
+  profilesPerLine: number; profiles: number;
+  perimeter: number; angleMetersWithWaste: number; anglePiecesBySide: [number, number, number, number]; angles: number;
   screws: number; screwBoxes: number; tapeMeters: number; compoundKg: number;
 };
 export type CeilingResult = CeilingValidResult | { status: 'invalid'; message: string };
@@ -29,23 +30,28 @@ export function calculateCeiling(input: CeilingInput): CeilingResult {
   const profileLines = roundUp(input.width / (input.spacingCm / 100)) + 1;
   const profileMeters = profileLines * input.length;
   const profileMetersWithWaste = profileMeters * factor;
-  const profiles = roundUp(profileMetersWithWaste / ceilingMaterials.profileLength);
+  const profilesPerLine = roundUp(input.length / ceilingMaterials.profileLength);
+  const profilesBeforeWaste = profileLines * profilesPerLine;
+  const profiles = roundUp(profilesBeforeWaste * factor);
   const perimeter = (input.length + input.width) * 2;
   const angleMetersWithWaste = perimeter * factor;
-  const angles = roundUp(angleMetersWithWaste / ceilingMaterials.profileLength);
+  const anglePiecesBySide: [number, number, number, number] = [input.length, input.width, input.length, input.width]
+    .map((side) => roundUp(side / ceilingMaterials.profileLength)) as [number, number, number, number];
+  const anglesBeforeWaste = anglePiecesBySide.reduce((total, pieces) => total + pieces, 0);
+  const angles = roundUp(anglesBeforeWaste * factor);
   const screws = roundUp(areaWithWaste * ceilingMaterials.screwsPerSquareMeter);
   const screwBoxes = roundUp(screws / ceilingMaterials.screwsPerBox);
   const tapeMeters = areaWithWaste * ceilingMaterials.tapePerSquareMeter;
   const compoundKg = areaWithWaste * ceilingMaterials.compoundPerSquareMeter;
   const lengths = [area, areaWithWaste, profileMeters, profileMetersWithWaste, perimeter, angleMetersWithWaste, tapeMeters, compoundKg];
-  const quantities = [boards, profileLines, profiles, angles, screws, screwBoxes];
+  const quantities = [boards, profileLines, profilesPerLine, profiles, ...anglePiecesBySide, angles, screws, screwBoxes];
   if (lengths.some((value) => !Number.isFinite(value) || value <= 0)
     || quantities.some((value) => !Number.isSafeInteger(value) || value < 1)) {
     return { status: 'invalid', message: 'As medidas excedem o intervalo numérico permitido para o cálculo do forro.' };
   }
   return {
     status: 'valid', area, areaWithWaste, spacingCm: input.spacingCm, wastePercent: input.wastePercent,
-    boards, profileLines, profileMeters, profileMetersWithWaste, profiles, perimeter, angleMetersWithWaste,
-    angles, screws, screwBoxes, tapeMeters, compoundKg,
+    boards, profileLines, profileMeters, profileMetersWithWaste, profilesPerLine, profiles, perimeter,
+    angleMetersWithWaste, anglePiecesBySide, angles, screws, screwBoxes, tapeMeters, compoundKg,
   };
 }

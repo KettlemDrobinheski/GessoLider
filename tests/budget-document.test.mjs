@@ -31,7 +31,10 @@ test('ceiling document includes F530 and angles and no wall-only materials', () 
   const labels = data.materials.map((item) => item.label).join(' ');
   for (const expected of ['Placa ST', 'F530', 'Cantoneira', 'G25', 'Caixa com 1.000', 'Fita', 'Massa']) assert.ok(labels.includes(expected));
   for (const excluded of ['Guia', 'Montante', 'Lã', 'Banda']) assert.ok(!labels.includes(excluded));
-  assert.equal(data.materials.find((item) => item.label.includes('F530')).value, '20 barras');
+  assert.equal(data.materials.find((item) => item.label.includes('F530')).value, '24 barras');
+  assert.equal(data.materials.find((item) => item.label.includes('Cantoneira')).value, '9 peças');
+  assert.match(data.configuration.find((item) => item.label.includes('Premissa')).value, /Contagem base por trecho independente/);
+  assert.match(data.configuration.find((item) => item.label.includes('Premissa')).value, /quantitativos podem aumentar/);
 });
 test('wood cladding document has only boards, screws, boxes, tape and compound', () => {
   const data = document(2);
@@ -52,7 +55,7 @@ test('each service exposes only its own dimensions and configuration', () => {
   assert.deepEqual(document(1).measurements.map((item) => item.label), ['Comprimento', 'Largura', 'Área']);
   assert.deepEqual(document(2).measurements.map((item) => item.label), ['Largura', 'Altura', 'Área']);
   assert.deepEqual(document(2).configuration.map((item) => item.label), ['Perda']);
-  assert.deepEqual(document(1).configuration.map((item) => item.label), ['Espaçamento', 'Perda']);
+  assert.deepEqual(document(1).configuration.map((item) => item.label), ['Espaçamento', 'Premissa de F530 e cantoneiras', 'Perda']);
 });
 test('HTML omits optional blank contact, commercial note and observations', () => {
   const html = buildBudgetPdfHtml(document());
