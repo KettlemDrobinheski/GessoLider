@@ -19,7 +19,7 @@ export function CeilingMaterialResults({ result }: { result: CeilingResult }) {
         note={`Estimativa utilizada: ${result.screws.toLocaleString('pt-BR')} parafusos.`} />
       <MaterialEstimateCard name="Fita para juntas" estimate={`${measure(result.tapeMeters)} m`} />
       <MaterialEstimateCard name="Massa para juntas" estimate={`${measure(result.compoundKg)} kg`} />
-      <Text style={styles.note}>F530 e cantoneiras mostram uma contagem base por trecho independente, sem reaproveitar sobras entre linhas ou lados. Não inclui material adicional para emendas ou sobreposições; os quantitativos podem aumentar conforme a regra do sistema da obra. Confirme antes da compra.</Text>
+      <Text style={styles.note}>F530 e cantoneiras são contados por trecho independente, sem reaproveitamento de sobras ou acréscimo para emendas e sobreposições.</Text>
       <Text style={styles.note}>{materialEstimateNotice}</Text>
     </View>
   );

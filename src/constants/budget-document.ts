@@ -1,1 +1,1 @@
-export const materialEstimateNotice = 'Quantidades de materiais são estimativas e podem variar conforme as condições e o método de execução da obra.';
+export const materialEstimateNotice = 'As quantidades são estimativas. As placas são calculadas pela área, sem paginação ou aproveitamento real dos recortes. Cortes, emendas e condições de instalação podem alterar os materiais necessários. Confira os materiais e as quantidades antes da compra e da execução.';

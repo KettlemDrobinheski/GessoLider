@@ -6,6 +6,7 @@ const { buildBudgetDocumentData, assertBudgetDocumentData, budgetPdfFilename, fo
 const { buildBudgetPdfHtml, escapeHtml } = await import('../src/services/budget-pdf-template.ts');
 const { formatClientAddress } = await import('../src/utils/client.ts');
 const { formatBRL } = await import('../src/utils/currency.ts');
+const { materialEstimateNotice } = await import('../src/constants/budget-document.ts');
 
 function document(index = 0, overrides = {}) {
   const fixtures = documentFixtures();
@@ -33,8 +34,9 @@ test('ceiling document includes F530 and angles and no wall-only materials', () 
   for (const excluded of ['Guia', 'Montante', 'Lã', 'Banda']) assert.ok(!labels.includes(excluded));
   assert.equal(data.materials.find((item) => item.label.includes('F530')).value, '24 barras');
   assert.equal(data.materials.find((item) => item.label.includes('Cantoneira')).value, '9 peças');
-  assert.match(data.configuration.find((item) => item.label.includes('Premissa')).value, /Contagem base por trecho independente/);
-  assert.match(data.configuration.find((item) => item.label.includes('Premissa')).value, /quantitativos podem aumentar/);
+  assert.match(data.configuration.find((item) => item.label.includes('Premissa')).value, /Contagem por trecho independente/);
+  assert.match(data.configuration.find((item) => item.label.includes('Premissa')).value, /sem reaproveitamento de sobras/);
+  assert.match(data.configuration.find((item) => item.label.includes('Premissa')).value, /emendas e sobreposições/);
 });
 test('wood cladding document has only boards, screws, boxes, tape and compound', () => {
   const data = document(2);
@@ -87,6 +89,17 @@ test('each service renders the same template containing company, client, service
     assert.match(html, /size: A4 portrait/);
     assert.match(html, /table-header-group/);
   }
+});
+test('includes the complete materials estimate notice once for each service', () => {
+  for (let i = 0; i < 3; i++) {
+    const html = buildBudgetPdfHtml(document(i));
+    assert.ok(html.includes(escapeHtml(materialEstimateNotice)));
+    assert.equal(html.split(escapeHtml(materialEstimateNotice)).length - 1, 1);
+  }
+  assert.match(materialEstimateNotice, /placas são calculadas pela área/);
+  assert.match(materialEstimateNotice, /sem paginação ou aproveitamento real dos recortes/);
+  assert.match(materialEstimateNotice, /Cortes, emendas e condições de instalação/);
+  assert.match(materialEstimateNotice, /antes da compra e da execução/);
 });
 test('commercial observation appears exactly once at the document end', () => {
   const data = document(); data.company.commercialNote = 'Sujeito à vistoria técnica.';

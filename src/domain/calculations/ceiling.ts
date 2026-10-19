@@ -1,3 +1,4 @@
+import { boardArea } from '../../constants/wall-configuration';
 import { ceilingMaterials, ceilingSpacingOptions, ceilingWasteOptions } from '../../constants/ceiling';
 import type { CeilingInput } from '../../types/ceiling';
 
@@ -26,7 +27,7 @@ export function calculateCeiling(input: CeilingInput): CeilingResult {
   const area = input.length * input.width;
   const factor = 1 + input.wastePercent / 100;
   const areaWithWaste = area * factor;
-  const boards = roundUp(areaWithWaste / ceilingMaterials.board.area);
+  const boards = roundUp(areaWithWaste / boardArea);
   const profileLines = roundUp(input.width / (input.spacingCm / 100)) + 1;
   const profileMeters = profileLines * input.length;
   const profileMetersWithWaste = profileMeters * factor;

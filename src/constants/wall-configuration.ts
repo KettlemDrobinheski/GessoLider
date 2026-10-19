@@ -1,6 +1,7 @@
 import type { BoardType, InsulationType, ProfileWidth, StudSpacingCm, WallSides, WastePercent } from '../types/wall-configuration';
 
 export const boardDimensions = { width: 1.2, height: 1.8 } as const;
+export const boardArea = boardDimensions.width * boardDimensions.height;
 export const boardDimensionLabel = '1,20 × 1,80 m';
 export const profileLength = 3;
 export const profileLengthLabel = '3,00 m';

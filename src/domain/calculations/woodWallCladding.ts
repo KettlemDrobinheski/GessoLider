@@ -1,4 +1,4 @@
-import { boardDimensions, wasteOptions } from '../../constants/wall-configuration';
+import { boardArea, wasteOptions } from '../../constants/wall-configuration';
 import { ceilingMaterials } from '../../constants/ceiling';
 import { wallConsumptionCoefficients } from './wallConsumables';
 import type { WoodWallCladdingInput, WoodWallCladdingMeasurements } from '../../types/wood-wall-cladding';
@@ -30,7 +30,7 @@ export function calculateWoodWallCladding(input: WoodWallCladdingInput): WoodWal
     return { status: 'invalid', message: 'Informe largura e altura maiores que zero e perda de 0%, 5% ou 10%.' };
   }
   const areaWithWaste = area * (1 + input.wastePercent / 100);
-  const boards = roundUp(areaWithWaste / (boardDimensions.width * boardDimensions.height));
+  const boards = roundUp(areaWithWaste / boardArea);
   const screws = roundUp(areaWithWaste * wallConsumptionCoefficients.boardScrewsPerSquareMeter);
   const screwBoxes = roundUp(screws / ceilingMaterials.screwsPerBox);
   const tapeMeters = areaWithWaste * wallConsumptionCoefficients.jointTapeMetersPerSquareMeter;

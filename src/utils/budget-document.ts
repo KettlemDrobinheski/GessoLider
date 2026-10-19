@@ -73,7 +73,7 @@ export function buildBudgetDocumentData({ company, client, source, issueDate }: 
       serviceName = 'Forro de drywall';
       measurements.push(row('Comprimento', meters(source.budget.measurements.length)), row('Largura', meters(source.budget.measurements.width)));
       configuration.push(row('Espaçamento', `${source.budget.configuration.spacingCm} cm`));
-      configuration.push(row('Premissa de F530 e cantoneiras', 'Contagem base por trecho independente, sem reaproveitar sobras. Não inclui material adicional para emendas ou sobreposições; os quantitativos podem aumentar. Confirme com o sistema técnico antes da compra.'));
+      configuration.push(row('Premissa de F530 e cantoneiras', 'Contagem por trecho independente, sem reaproveitamento de sobras ou acréscimo para emendas e sobreposições.'));
       materials.push(row('Perfil F530 - 3 m', quantity(source.materials.profiles, 'barras')), row('Cantoneira - 3 m', quantity(source.materials.angles, 'peças')));
     } else {
       serviceName = 'Revestimento em parede de madeira';

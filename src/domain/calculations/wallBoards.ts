@@ -1,4 +1,4 @@
-import { boardDimensions, boardOptions, sidesOptions, wasteOptions } from '../../constants/wall-configuration';
+import { boardArea, boardDimensions, boardOptions, sidesOptions, wasteOptions } from '../../constants/wall-configuration';
 import type { WallConfiguration } from '../../types/wall-configuration';
 import { calculateWallProfiles } from './wallProfiles';
 import type { WallProfilesInput, WallProfilesUnsupportedResult, WallProfilesValidationError } from './wallProfiles';
@@ -56,7 +56,6 @@ export function calculateWallBoards(input: WallBoardsInput): WallBoardsResult {
     return { status: 'invalid', errors: [{ field: 'length', code: 'area-out-of-range', message: 'Revise as medidas: a área está fora do intervalo permitido.' }] };
   }
   const areaWithWaste = coveringArea * (1 + input.wastePercent / 100);
-  const boardArea = boardDimensions.width * boardDimensions.height;
   const boardCount = areaWithWaste / boardArea;
   const nearestInteger = Math.round(boardCount);
   // Evita uma placa extra quando um múltiplo exato acumula erro de ponto flutuante.
