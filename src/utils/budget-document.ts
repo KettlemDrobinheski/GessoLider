@@ -5,12 +5,64 @@ import { formatArea } from './measurements';
 import { toCents } from './currency';
 import { validateClient } from './client';
 import { validateCompanyProfile } from './company-profile';
-import { insulationOptions } from '../constants/wall-configuration';
+import { boardDimensionLabel, insulationOptions } from '../constants/wall-configuration';
+import { ceilingMaterials } from '../constants/ceiling';
+import { ceilingAccessoriesNotice, ceilingProfileDirectionNotice, ceilingProfileEstimateNotice } from '../constants/budget-document';
 
 const decimal = (value: number) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const meters = (value: number) => `${decimal(value)} m`;
 const quantity = (value: number, unit: string) => `${value.toLocaleString('pt-BR')} ${unit}`;
 const row = (label: string, value: string): DocumentRow => ({ label, value });
+
+function hasSameData(actual: unknown, expected: unknown): boolean {
+  if (actual === expected) return true;
+  if (Array.isArray(actual) || Array.isArray(expected)) {
+    return Array.isArray(actual) && Array.isArray(expected) && actual.length === expected.length
+      && actual.every((value, index) => hasSameData(value, expected[index]));
+  }
+  if (actual === null || expected === null || typeof actual !== 'object' || typeof expected !== 'object') return false;
+  const actualKeys = Object.keys(actual);
+  const expectedKeys = Object.keys(expected);
+  return actualKeys.length === expectedKeys.length
+    && expectedKeys.every((key) => Object.prototype.hasOwnProperty.call(actual, key)
+      && hasSameData((actual as Record<string, unknown>)[key], (expected as Record<string, unknown>)[key]));
+}
+
+function assertMaterialsMatchBudget(source: BudgetDocumentSource): void {
+  let expectedInput: unknown;
+  if (source.service === 'wall') {
+    expectedInput = {
+      length: source.budget.measurements.length,
+      height: source.budget.measurements.height,
+      openings: source.budget.measurements.openings,
+      studSpacingCm: source.budget.configuration.studSpacingCm,
+      boardType: source.budget.configuration.boardType,
+      boardDimensions: source.budget.configuration.boardDimensions,
+      sides: source.budget.configuration.sides,
+      wastePercent: source.budget.configuration.wastePercent,
+      profileWidth: source.budget.configuration.profileWidth,
+      insulation: source.budget.configuration.insulation,
+      acousticBand: source.budget.configuration.acousticBand,
+    };
+  } else if (source.service === 'ceiling') {
+    expectedInput = {
+      length: source.budget.measurements.length,
+      width: source.budget.measurements.width,
+      spacingCm: source.budget.configuration.spacingCm,
+      wastePercent: source.budget.configuration.wastePercent,
+    };
+  } else {
+    expectedInput = {
+      width: source.budget.measurements.width,
+      height: source.budget.measurements.height,
+      wastePercent: source.budget.configuration.wastePercent,
+    };
+  }
+
+  if (!hasSameData(source.materials.calculationInput, expectedInput)) {
+    throw new Error('Os materiais calculados não correspondem às medidas e configurações deste orçamento. Recalcule os materiais antes de continuar.');
+  }
+}
 
 export function formatIssueDate(issueDate: string): string {
   return new Date(issueDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
@@ -46,6 +98,7 @@ export function buildBudgetDocumentData({ company, client, source, issueDate }: 
   const size = dimensions.service === 'wall' ? [dimensions.length, dimensions.height]
     : dimensions.service === 'ceiling' ? [dimensions.length, dimensions.width] : [dimensions.width, dimensions.height];
   if (source.service !== dimensions.service || size.some((value) => !Number.isFinite(value) || value <= 0)) throw new Error('Revise as medidas do serviço.');
+  assertMaterialsMatchBudget(source);
   const materials: DocumentRow[] = [];
   const measurements: DocumentRow[] = [];
   const configuration: DocumentRow[] = [];
@@ -73,15 +126,18 @@ export function buildBudgetDocumentData({ company, client, source, issueDate }: 
       serviceName = 'Forro de drywall';
       measurements.push(row('Comprimento', meters(source.budget.measurements.length)), row('Largura', meters(source.budget.measurements.width)));
       configuration.push(row('Espaçamento', `${source.budget.configuration.spacingCm} cm`));
-      configuration.push(row('Premissa de F530 e cantoneiras', 'Contagem por trecho independente, sem reaproveitamento de sobras ou acréscimo para emendas e sobreposições.'));
-      materials.push(row('Perfil F530 - 3 m', quantity(source.materials.profiles, 'barras')), row('Cantoneira - 3 m', quantity(source.materials.angles, 'peças')));
+      configuration.push(row('Orientação estimada de F530', ceilingProfileDirectionNotice));
+      configuration.push(row('Premissa de F530 e cantoneiras', ceilingProfileEstimateNotice));
+      configuration.push(row('Acessórios não incluídos', ceilingAccessoriesNotice));
+      materials.push(row(`Perfil F530 - ${ceilingMaterials.profileLength} m`, quantity(source.materials.profiles, 'barras')),
+        row(`Cantoneira - ${ceilingMaterials.profileLength} m`, quantity(source.materials.angles, 'peças')));
     } else {
       serviceName = 'Revestimento em parede de madeira';
       measurements.push(row('Largura', meters(source.budget.measurements.width)), row('Altura', meters(source.budget.measurements.height)));
     }
     measurements.push(row('Área', formatArea(result.area)));
     configuration.push(row('Perda', `${source.budget.configuration.wastePercent}%`));
-    materials.unshift(row('Placa ST 1,20 × 1,80 m', quantity(result.boards, 'placas')));
+    materials.unshift(row(`Placa ST ${boardDimensionLabel}`, quantity(result.boards, 'placas')));
     materials.push(row(source.service === 'ceiling' ? 'Parafusos G25' : 'Parafusos', quantity(result.screws, 'unidades estimadas')),
       row('Caixa com 1.000 parafusos', quantity(result.screwBoxes, result.screwBoxes === 1 ? 'caixa' : 'caixas')),
       row('Fita para juntas', meters(result.tapeMeters)), row('Massa para juntas', `${decimal(result.compoundKg)} kg`));

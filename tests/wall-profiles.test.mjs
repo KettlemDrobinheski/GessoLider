@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { calculateWallProfiles } from '../src/domain/calculations/wallProfiles.ts';
+import './register-typescript.mjs';
+const { calculateWallProfiles } = await import('../src/domain/calculations/wallProfiles.ts');
 
 const base = { length: 4, height: 2.7, studSpacingCm: 60, openings: [] };
 const door = { id: 'door-1', type: 'door', width: 0.8, height: 2.1, quantity: 1 };

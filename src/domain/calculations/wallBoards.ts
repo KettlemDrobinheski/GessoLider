@@ -1,4 +1,4 @@
-import { boardArea, boardDimensions, boardOptions, sidesOptions, wasteOptions } from '../../constants/wall-configuration';
+import { boardArea, boardDimensionLabel, boardDimensions, boardOptions, sidesOptions, wasteOptions } from '../../constants/wall-configuration';
 import type { WallConfiguration } from '../../types/wall-configuration';
 import { calculateWallProfiles } from './wallProfiles';
 import type { WallProfilesInput, WallProfilesUnsupportedResult, WallProfilesValidationError } from './wallProfiles';
@@ -39,7 +39,7 @@ export function calculateWallBoards(input: WallBoardsInput): WallBoardsResult {
     errors.push({ field: 'boardType', code: 'invalid-board-type', message: 'Selecione uma placa ST, RU ou RF.' });
   }
   if (input.boardDimensions?.width !== boardDimensions.width || input.boardDimensions?.height !== boardDimensions.height) {
-    errors.push({ field: 'boardDimensions', code: 'invalid-board-dimensions', message: 'Esta versão utiliza placas de 1,20 × 1,80 m.' });
+    errors.push({ field: 'boardDimensions', code: 'invalid-board-dimensions', message: `Esta versão utiliza placas de ${boardDimensionLabel}.` });
   }
   if (!sidesOptions.some((option) => option.value === input.sides)) {
     errors.push({ field: 'sides', code: 'invalid-sides', message: 'Selecione a aplicação em um ou dois lados.' });

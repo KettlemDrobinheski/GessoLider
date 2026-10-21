@@ -2,11 +2,14 @@ import { useMemo } from 'react';
 import { useBudgetClient } from '@/hooks/use-budget-client';
 import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
+import { StyleSheet, Text } from 'react-native';
 import { BudgetButton, BudgetScreen } from '@/components/budget/budget-screen';
 import { BudgetCard, BudgetLine } from '@/components/budget/budget-card';
 import { ConfigurationOption } from '@/components/budget/configuration-option';
 import { ConfigurationSection } from '@/components/budget/configuration-section';
 import { ceilingSpacingOptions, ceilingWasteOptions } from '@/constants/ceiling';
+import { Brand } from '@/constants/brand';
+import { ceilingProfileDirectionNotice } from '@/constants/budget-document';
 import type { CeilingBudgetInput, CeilingConfiguration, CeilingMeasurements } from '@/types/ceiling';
 import { parseCeilingBudgetInput, parseCeilingMeasurements } from '@/utils/ceiling';
 import { formatArea } from '@/utils/measurements';
@@ -54,6 +57,7 @@ function CeilingConfigurationForm({ measurements, initialConfiguration, onBack, 
         {ceilingSpacingOptions.map((option) => <ConfigurationOption key={option.value} label={option.label}
           selected={spacingCm === option.value} onSelect={() => setSpacingCm(option.value)} />)}
       </ConfigurationSection>
+      <Text style={styles.note}>{ceilingProfileDirectionNotice}</Text>
       <ConfigurationSection title="Percentual de perda">
         {ceilingWasteOptions.map((option) => <ConfigurationOption key={option.value} label={option.label}
           selected={wastePercent === option.value} onSelect={() => setWastePercent(option.value)} />)}
@@ -66,3 +70,5 @@ function CeilingConfigurationForm({ measurements, initialConfiguration, onBack, 
     </BudgetScreen>
   );
 }
+
+const styles = StyleSheet.create({ note: { color: Brand.dark, fontSize: 13, lineHeight: 20 } });

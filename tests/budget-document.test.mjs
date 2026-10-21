@@ -34,9 +34,32 @@ test('ceiling document includes F530 and angles and no wall-only materials', () 
   for (const excluded of ['Guia', 'Montante', 'Lã', 'Banda']) assert.ok(!labels.includes(excluded));
   assert.equal(data.materials.find((item) => item.label.includes('F530')).value, '24 barras');
   assert.equal(data.materials.find((item) => item.label.includes('Cantoneira')).value, '9 peças');
-  assert.match(data.configuration.find((item) => item.label.includes('Premissa')).value, /Contagem por trecho independente/);
-  assert.match(data.configuration.find((item) => item.label.includes('Premissa')).value, /sem reaproveitamento de sobras/);
-  assert.match(data.configuration.find((item) => item.label.includes('Premissa')).value, /emendas e sobreposições/);
+  const configuration = Object.fromEntries(data.configuration.map(({ label, value }) => [label, value]));
+  assert.match(configuration['Orientação estimada de F530'], /sentido do comprimento.*distribuídas ao longo da largura/);
+  assert.match(configuration['Premissa de F530 e cantoneiras'], /por trecho e por peças comerciais/);
+  assert.match(configuration['Premissa de F530 e cantoneiras'], /não é um plano de montagem/);
+  assert.match(configuration['Premissa de F530 e cantoneiras'], /não define emendas/);
+  assert.match(configuration['Premissa de F530 e cantoneiras'], /não calcula o aproveitamento real das sobras/);
+  for (const accessory of ['tirantes', 'presilhas', 'reguladores', 'conectores', 'buchas', 'fixadores']) {
+    assert.ok(configuration['Acessórios não incluídos'].includes(accessory), accessory);
+  }
+});
+test('ceiling PDF includes its orientation, segment estimate and excluded accessories once', () => {
+  const html = buildBudgetPdfHtml(document(1));
+  for (const notice of [
+    'sentido do comprimento do ambiente, distribuídas ao longo da largura',
+    'não é um plano de montagem',
+    'não define emendas',
+    'não calcula o aproveitamento real das sobras',
+    'não inclui acessórios de suspensão e ancoragem',
+    'tirantes, presilhas, reguladores, conectores, buchas e fixadores',
+  ]) assert.ok(html.includes(notice), notice);
+  assert.equal(html.split('não inclui acessórios de suspensão e ancoragem').length - 1, 1);
+  for (const index of [0, 2]) {
+    const otherServiceHtml = buildBudgetPdfHtml(document(index));
+    assert.ok(!otherServiceHtml.includes('Orientação estimada de F530'));
+    assert.ok(!otherServiceHtml.includes('acessórios de suspensão e ancoragem'));
+  }
 });
 test('wood cladding document has only boards, screws, boxes, tape and compound', () => {
   const data = document(2);
@@ -52,12 +75,25 @@ test('adapters use supplied material results without recalculating them', () => 
   assert.equal(data.materials[0].value, '99 placas');
   assert.equal(data.materials.find((item) => item.label.includes('F530')).value, '88 barras');
 });
+for (const [index, service, changeBudget] of [
+  [0, 'wall', (budget) => { budget.measurements.length = 5; }],
+  [1, 'ceiling', (budget) => { budget.configuration.spacingCm = 60; }],
+  [2, 'lining', (budget) => { budget.configuration.wastePercent = 0; }],
+]) {
+  test(`rejects ${service} materials calculated from different budget inputs`, () => {
+    const fixture = documentFixtures();
+    const source = fixture.sources[index];
+    source.budget = structuredClone(source.budget);
+    changeBudget(source.budget);
+    assert.throws(() => buildBudgetDocumentData({ ...fixture, source }), /não correspondem às medidas e configurações/);
+  });
+}
 test('each service exposes only its own dimensions and configuration', () => {
   assert.deepEqual(document().measurements.map((item) => item.label), ['Comprimento', 'Altura', 'Área']);
   assert.deepEqual(document(1).measurements.map((item) => item.label), ['Comprimento', 'Largura', 'Área']);
   assert.deepEqual(document(2).measurements.map((item) => item.label), ['Largura', 'Altura', 'Área']);
   assert.deepEqual(document(2).configuration.map((item) => item.label), ['Perda']);
-  assert.deepEqual(document(1).configuration.map((item) => item.label), ['Espaçamento', 'Premissa de F530 e cantoneiras', 'Perda']);
+  assert.deepEqual(document(1).configuration.map((item) => item.label), ['Espaçamento', 'Orientação estimada de F530', 'Premissa de F530 e cantoneiras', 'Acessórios não incluídos', 'Perda']);
 });
 test('HTML omits optional blank contact, commercial note and observations', () => {
   const html = buildBudgetPdfHtml(document());

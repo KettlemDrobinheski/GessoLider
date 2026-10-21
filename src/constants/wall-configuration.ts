@@ -2,9 +2,10 @@ import type { BoardType, InsulationType, ProfileWidth, StudSpacingCm, WallSides,
 
 export const boardDimensions = { width: 1.2, height: 1.8 } as const;
 export const boardArea = boardDimensions.width * boardDimensions.height;
-export const boardDimensionLabel = '1,20 × 1,80 m';
+const formatDimension = (value: number) => value.toFixed(2).replace('.', ',');
+export const boardDimensionLabel = `${formatDimension(boardDimensions.width)} × ${formatDimension(boardDimensions.height)} m`;
 export const profileLength = 3;
-export const profileLengthLabel = '3,00 m';
+export const profileLengthLabel = `${profileLength.toFixed(2).replace('.', ',')} m`;
 
 export const boardOptions: readonly { value: BoardType; label: string }[] = [
   { value: 'ST', label: 'Standard (ST)' },

@@ -52,7 +52,7 @@ test('rounds boxes of 1000 up at package boundaries', () => {
 
 test('returns only the requested material estimates without metal structure or invented packaging', () => {
   assert.deepEqual(Object.keys(calculateWoodWallCladding(base)).sort(), [
-    'status', 'area', 'areaWithWaste', 'wastePercent', 'boards', 'screws', 'screwBoxes', 'tapeMeters', 'compoundKg',
+    'status', 'area', 'areaWithWaste', 'wastePercent', 'calculationInput', 'boards', 'screws', 'screwBoxes', 'tapeMeters', 'compoundKg',
   ].sort());
 });
 

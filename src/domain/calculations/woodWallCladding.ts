@@ -7,6 +7,7 @@ import { toCents } from '../../utils/currency';
 
 export type WoodWallCladdingValidResult = {
   status: 'valid'; area: number; areaWithWaste: number; wastePercent: WoodWallCladdingInput['wastePercent'];
+  calculationInput: Readonly<WoodWallCladdingInput>;
   boards: number; screws: number; screwBoxes: number; tapeMeters: number; compoundKg: number;
 };
 export type WoodWallCladdingResult = WoodWallCladdingValidResult | { status: 'invalid'; message: string };
@@ -39,7 +40,11 @@ export function calculateWoodWallCladding(input: WoodWallCladdingInput): WoodWal
     || [boards, screws, screwBoxes].some((value) => !Number.isSafeInteger(value) || value < 1)) {
     return { status: 'invalid', message: 'As medidas excedem o intervalo numérico permitido para o revestimento.' };
   }
-  return { status: 'valid', area, areaWithWaste, wastePercent: input.wastePercent, boards, screws, screwBoxes, tapeMeters, compoundKg };
+  return {
+    status: 'valid', area, areaWithWaste, wastePercent: input.wastePercent,
+    calculationInput: Object.freeze({ width: input.width, height: input.height, wastePercent: input.wastePercent }),
+    boards, screws, screwBoxes, tapeMeters, compoundKg,
+  };
 }
 
 export function calculateWoodWallCladdingPricing(measurements: WoodWallCladdingMeasurements, input: BudgetPricingInput): BudgetPricing | null {

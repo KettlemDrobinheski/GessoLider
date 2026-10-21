@@ -4,6 +4,7 @@ import type { CeilingInput } from '../../types/ceiling';
 
 export type CeilingValidResult = {
   status: 'valid'; area: number; areaWithWaste: number; spacingCm: 40 | 60; wastePercent: 0 | 5 | 10;
+  calculationInput: Readonly<CeilingInput>;
   boards: number; profileLines: number; profileMeters: number; profileMetersWithWaste: number;
   profilesPerLine: number; profiles: number;
   perimeter: number; angleMetersWithWaste: number; anglePiecesBySide: [number, number, number, number]; angles: number;
@@ -52,6 +53,9 @@ export function calculateCeiling(input: CeilingInput): CeilingResult {
   }
   return {
     status: 'valid', area, areaWithWaste, spacingCm: input.spacingCm, wastePercent: input.wastePercent,
+    calculationInput: Object.freeze({
+      length: input.length, width: input.width, spacingCm: input.spacingCm, wastePercent: input.wastePercent,
+    }),
     boards, profileLines, profileMeters, profileMetersWithWaste, profilesPerLine, profiles, perimeter,
     angleMetersWithWaste, anglePiecesBySide, angles, screws, screwBoxes, tapeMeters, compoundKg,
   };

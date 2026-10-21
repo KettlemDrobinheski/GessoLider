@@ -11,7 +11,13 @@ import type { WallConsumables } from './wallConsumables';
 
 export type WallMaterialsInput = WallBoardsInput & Pick<WallConfiguration, 'profileWidth'> & Partial<Pick<WallConfiguration, 'insulation' | 'acousticBand'>>;
 
+export type WallMaterialsCalculationInput = Omit<WallMaterialsInput, 'insulation' | 'acousticBand'> & {
+  insulation: WallConfiguration['insulation'];
+  acousticBand: WallConfiguration['acousticBand'];
+};
+
 export type WallMaterialsValidResult = WallBoardsValidResult & {
+  calculationInput: Readonly<WallMaterialsCalculationInput>;
   insulation: WallInsulation | null;
   consumables: WallConsumables;
   guides: WallProfilesValidResult['guides'] & { width: WallConfiguration['profileWidth'] };
@@ -52,8 +58,23 @@ export function calculateWallMaterials(input: WallMaterialsInput): WallMaterials
   const profiles = calculateWallProfiles(input);
   if (profiles.status !== 'valid') return profiles;
 
+  const calculationInput: Readonly<WallMaterialsCalculationInput> = Object.freeze({
+    length: input.length,
+    height: input.height,
+    openings: Object.freeze(input.openings.map((opening) => Object.freeze({ ...opening }))),
+    studSpacingCm: input.studSpacingCm,
+    boardType: input.boardType,
+    boardDimensions: Object.freeze({ ...input.boardDimensions }),
+    sides: input.sides,
+    wastePercent: input.wastePercent,
+    profileWidth: input.profileWidth,
+    insulation: insulationType,
+    acousticBand: input.acousticBand ?? false,
+  });
+
   return {
     ...boards,
+    calculationInput,
     insulation,
     consumables,
     guides: { ...profiles.guides, width: input.profileWidth },

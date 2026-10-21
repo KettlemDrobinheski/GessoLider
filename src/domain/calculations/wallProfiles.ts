@@ -1,4 +1,5 @@
 import type { Opening } from '../../types/measurements';
+import { profileLength } from '../../constants/wall-configuration';
 import type { WallConfiguration, WallMeasurements } from '../../types/wall-configuration';
 
 export type WallProfilesInput = Pick<WallMeasurements, 'length' | 'height'>
@@ -7,8 +8,8 @@ export type WallProfilesInput = Pick<WallMeasurements, 'length' | 'height'>
 
 export type WallProfilesValidResult = {
   status: 'valid';
-  guides: { quantity: number; pieceLength: 3; totalLength: number };
-  studs: { quantity: number; pieceLength: 3 };
+  guides: { quantity: number; pieceLength: typeof profileLength; totalLength: number };
+  studs: { quantity: number; pieceLength: typeof profileLength };
 };
 
 export type WallProfilesUnsupportedReason = 'height-above-3m' | 'openings-require-additional-rules';
@@ -31,8 +32,6 @@ export type WallProfilesInvalidResult = {
 
 export type WallProfilesResult = WallProfilesValidResult | WallProfilesUnsupportedResult | WallProfilesInvalidResult;
 
-const commercialPieceLength = 3;
-
 export function calculateWallProfiles(input: WallProfilesInput): WallProfilesResult {
   const errors: WallProfilesValidationError[] = [];
   for (const field of ['length', 'height'] as const) {
@@ -49,12 +48,12 @@ export function calculateWallProfiles(input: WallProfilesInput): WallProfilesRes
   if (errors.length > 0) return { status: 'invalid', errors };
 
   const reasons: WallProfilesUnsupportedReason[] = [];
-  if (input.height > commercialPieceLength) reasons.push('height-above-3m');
+  if (input.height > profileLength) reasons.push('height-above-3m');
   if (input.openings.length > 0) reasons.push('openings-require-additional-rules');
   if (reasons.length > 0) return { status: 'unsupported', reasons };
 
   const totalGuideLength = input.length * 2;
-  const guideQuantity = Math.ceil(totalGuideLength / commercialPieceLength);
+  const guideQuantity = Math.ceil(totalGuideLength / profileLength);
   const studQuantity = Math.ceil(input.length / (input.studSpacingCm / 100)) + 1;
   if (!Number.isSafeInteger(guideQuantity) || !Number.isSafeInteger(studQuantity)) {
     return {
@@ -65,7 +64,7 @@ export function calculateWallProfiles(input: WallProfilesInput): WallProfilesRes
 
   return {
     status: 'valid',
-    guides: { quantity: guideQuantity, pieceLength: commercialPieceLength, totalLength: totalGuideLength },
-    studs: { quantity: studQuantity, pieceLength: commercialPieceLength },
+    guides: { quantity: guideQuantity, pieceLength: profileLength, totalLength: totalGuideLength },
+    studs: { quantity: studQuantity, pieceLength: profileLength },
   };
 }

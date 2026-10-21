@@ -1,5 +1,5 @@
 import type { CeilingConfiguration } from '../types/ceiling';
-import { boardArea, boardDimensions } from './wall-configuration';
+import { boardArea, boardDimensions, profileLength } from './wall-configuration';
 
 export const ceilingSpacingOptions: readonly { value: CeilingConfiguration['spacingCm']; label: string }[] = [
   { value: 40, label: '40 cm' }, { value: 60, label: '60 cm' },
@@ -9,7 +9,7 @@ export const ceilingWasteOptions: readonly { value: CeilingConfiguration['wasteP
 ];
 export const ceilingMaterials = {
   board: { ...boardDimensions, area: boardArea },
-  profileLength: 3,
+  profileLength,
   screwsPerSquareMeter: 15,
   screwsPerBox: 1000,
   tapePerSquareMeter: 1.4,
