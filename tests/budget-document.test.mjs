@@ -79,7 +79,8 @@ test('ceiling document includes F530 and angles and no wall-only materials', () 
   }
 });
 test('ceiling PDF includes its orientation, segment estimate and excluded accessories once', () => {
-  const html = buildBudgetPdfHtml(document(1));
+  const data = document(1);
+  const html = buildBudgetPdfHtml(data);
   for (const notice of [
     'sentido do comprimento do ambiente, distribuídas ao longo da largura',
     'não é um plano de montagem',
@@ -89,6 +90,9 @@ test('ceiling PDF includes its orientation, segment estimate and excluded access
     'tirantes, presilhas, reguladores, conectores, buchas e fixadores',
   ]) assert.ok(html.includes(notice), notice);
   assert.equal(html.split('não inclui acessórios de suspensão e ancoragem').length - 1, 1);
+  for (const { value } of data.configuration.filter(({ label }) => ['Orientação estimada de F530', 'Premissa de F530 e cantoneiras', 'Acessórios não incluídos'].includes(label))) {
+    assert.equal(html.split(value).length - 1, 1, value);
+  }
   for (const index of [0, 2]) {
     const otherServiceHtml = buildBudgetPdfHtml(document(index));
     assert.ok(!otherServiceHtml.includes('Orientação estimada de F530'));
@@ -158,6 +162,13 @@ test('each service renders the same template containing company, client, service
     for (const value of [data.company.companyName, data.client.name, data.serviceName, formatBRL(data.pricing.total), 'ORÇAMENTO', 'Materiais estimados']) assert.ok(html.includes(escapeHtml(value)), value);
     assert.match(html, /size: A4 portrait/);
     assert.match(html, /table-header-group/);
+    for (const { label, value } of [...data.measurements, ...data.configuration, ...data.materials]) {
+      const row = `<tr><td>${escapeHtml(label)}</td><td class="value">${escapeHtml(value)}</td></tr>`;
+      assert.ok(html.includes(row), `${data.service}: ${label} / ${value}`);
+    }
+    for (const value of [formatBRL(data.pricing.materialsTotal), formatBRL(data.pricing.laborTotal), formatBRL(data.pricing.total)]) {
+      assert.ok(html.includes(escapeHtml(value)), `${data.service}: ${value}`);
+    }
   }
 });
 test('includes the complete materials estimate notice once for each service', () => {
