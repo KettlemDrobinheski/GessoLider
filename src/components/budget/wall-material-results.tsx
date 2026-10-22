@@ -1,4 +1,4 @@
-import { materialEstimateNotice } from '@/constants/budget-document';
+import { materialEstimateNotice, wallAcousticBandEstimateNotice, wallGuideEstimateNotice, wallInsulationEstimateNotice } from '@/constants/budget-document';
 import { StyleSheet, Text, View } from 'react-native';
 import { Brand } from '@/constants/brand';
 import { boardOptions, insulationOptions } from '@/constants/wall-configuration';
@@ -41,18 +41,18 @@ export function WallMaterialResults({ result }: { result: WallMaterialsResult })
             <Text accessibilityRole="header" style={styles.sectionTitle}>Isolamento</Text>
             <MaterialEstimateCard name={insulationOptions.find((option) => option.value === result.insulation?.type)?.label ?? ''}
               estimate={`Área estimada: ${formatArea(result.insulation.areaWithWaste)}`}
-              note="Área interna da parede, sem conversão para rolos, pacotes ou placas." />
+              note={wallInsulationEstimateNotice} />
           </>
         )}
         {result.consumables.acousticBand && (
           <>
             <Text accessibilityRole="header" style={styles.sectionTitle}>Acessórios</Text>
             <MaterialEstimateCard name="Banda acústica" estimate={`Quantidade estimada: ${formatMeasure(result.consumables.acousticBand.meters)} m`}
-              note="Estimativa por área, sem levantamento linear detalhado dos encontros da parede." />
+              note={wallAcousticBandEstimateNotice} />
           </>
         )}
         <Text style={styles.note}>{materialEstimateNotice}</Text>
-        <Text style={styles.note}>As guias são estimadas pela metragem total, sem plano de corte das peças.</Text>
+        <Text style={styles.note}>{wallGuideEstimateNotice}</Text>
       </View>
     );
   }

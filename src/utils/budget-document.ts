@@ -7,7 +7,14 @@ import { validateClient } from './client';
 import { validateCompanyProfile } from './company-profile';
 import { boardDimensionLabel, insulationOptions } from '../constants/wall-configuration';
 import { ceilingMaterials } from '../constants/ceiling';
-import { ceilingAccessoriesNotice, ceilingProfileDirectionNotice, ceilingProfileEstimateNotice } from '../constants/budget-document';
+import {
+  ceilingAccessoriesNotice,
+  ceilingProfileDirectionNotice,
+  ceilingProfileEstimateNotice,
+  wallAcousticBandEstimateNotice,
+  wallGuideEstimateNotice,
+  wallInsulationEstimateNotice,
+} from '../constants/budget-document';
 
 const decimal = (value: number) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const meters = (value: number) => `${decimal(value)} m`;
@@ -116,8 +123,14 @@ export function buildBudgetDocumentData({ company, client, source, issueDate }: 
       row(`Guia ${result.guides.width} mm - ${result.guides.pieceLength} m`, quantity(result.guides.quantity, 'peças')),
       row(`Montante ${result.studs.width} mm - ${result.studs.pieceLength} m`, quantity(result.studs.quantity, 'peças')),
       row('Parafusos para placas', quantity(result.consumables.boardScrews.quantity, 'unidades estimadas')),
-      row('Parafusos metal-metal', 'Quantidade a definir'), row('Fita para juntas', meters(result.consumables.jointTape.meters)),
+      row('Fita para juntas', meters(result.consumables.jointTape.meters)),
       row('Massa para juntas', `${decimal(result.consumables.jointCompound.kilograms)} kg`));
+    if (result.consumables.metalScrews.status === 'to-define') {
+      materials.push(row('Parafusos metal-metal', 'Quantidade a definir'));
+    }
+    configuration.push(row('Estimativa das guias', wallGuideEstimateNotice));
+    if (result.insulation) configuration.push(row('Premissa do isolamento', wallInsulationEstimateNotice));
+    if (result.consumables.acousticBand) configuration.push(row('Premissa da banda acústica', wallAcousticBandEstimateNotice));
     if (result.insulation) materials.push(row(insulationOptions.find((option) => option.value === result.insulation?.type)?.label ?? 'Isolamento', formatArea(result.insulation.areaWithWaste)));
     if (result.consumables.acousticBand) materials.push(row('Banda acústica', meters(result.consumables.acousticBand.meters)));
   } else {

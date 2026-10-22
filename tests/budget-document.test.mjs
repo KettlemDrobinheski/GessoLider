@@ -7,6 +7,7 @@ const { buildBudgetPdfHtml, escapeHtml } = await import('../src/services/budget-
 const { formatClientAddress } = await import('../src/utils/client.ts');
 const { formatBRL } = await import('../src/utils/currency.ts');
 const { materialEstimateNotice } = await import('../src/constants/budget-document.ts');
+const { calculateWallMaterials } = await import('../src/domain/calculations/wallMaterials.ts');
 
 function document(index = 0, overrides = {}) {
   const fixtures = documentFixtures();
@@ -26,6 +27,39 @@ test('wall document includes its calculated structure, insulation and acoustic b
   for (const expected of ['Placa ST', 'Guia 70 mm', 'Montante 70 mm', 'Parafusos para placas', 'Parafusos metal-metal', 'Fita', 'Massa', 'Lã de vidro', 'Banda acústica']) assert.ok(labels.includes(expected), expected);
   assert.equal(data.materials[0].value, '11 placas');
   assert.ok(!labels.includes('F530'));
+});
+test('wall document includes the screen estimates without duplicating the general notice', () => {
+  const data = document();
+  const configuration = Object.fromEntries(data.configuration.map(({ label, value }) => [label, value]));
+  assert.equal(configuration['Estimativa das guias'], 'As guias são estimadas pela metragem total, sem plano de corte das peças.');
+  assert.equal(configuration['Premissa do isolamento'], 'Área interna da parede, sem conversão para rolos, pacotes ou placas.');
+  assert.equal(configuration['Premissa da banda acústica'], 'Estimativa por área, sem levantamento linear detalhado dos encontros da parede.');
+  const html = buildBudgetPdfHtml(data);
+  for (const notice of Object.values(configuration).filter((value) => /estimadas pela metragem|conversão para rolos|levantamento linear/.test(value))) {
+    assert.equal(html.split(notice).length - 1, 1);
+  }
+  assert.equal(html.split(materialEstimateNotice).length - 1, 1);
+});
+test('wall document includes insulation and acoustic band notices only when selected', () => {
+  const fixture = documentFixtures();
+  const source = fixture.sources[0];
+  source.budget.configuration.insulation = null;
+  source.budget.configuration.acousticBand = false;
+  source.materials = calculateWallMaterials({ ...source.budget.measurements, ...source.budget.configuration });
+  const data = buildBudgetDocumentData({ ...fixture, source });
+  const labels = data.configuration.map(({ label }) => label);
+  assert.ok(labels.includes('Estimativa das guias'));
+  assert.ok(!labels.includes('Premissa do isolamento'));
+  assert.ok(!labels.includes('Premissa da banda acústica'));
+});
+test('wall document includes metal-metal screws only while their status is to-define', () => {
+  const fixture = documentFixtures();
+  const source = fixture.sources[0];
+  assert.equal(source.materials.consumables.metalScrews.status, 'to-define');
+  assert.ok(document().materials.some(({ label, value }) => label === 'Parafusos metal-metal' && value === 'Quantidade a definir'));
+  source.materials.consumables.metalScrews.status = 'estimated';
+  const data = buildBudgetDocumentData({ ...fixture, source });
+  assert.ok(!data.materials.some(({ label }) => label === 'Parafusos metal-metal'));
 });
 test('ceiling document includes F530 and angles and no wall-only materials', () => {
   const data = document(1);
