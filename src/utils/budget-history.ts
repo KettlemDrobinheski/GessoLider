@@ -21,7 +21,7 @@ export const savedBudgetStatusLabels = {
   draft: 'Rascunho',
   sent: 'Enviado',
   approved: 'Aprovado',
-  rejected: 'Recusado',
+  rejected: 'Rejeitado',
   completed: 'Concluído',
 } as const;
 

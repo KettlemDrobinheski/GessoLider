@@ -70,6 +70,7 @@ test('formats visible history fields and creates details navigation by persisted
   const record = { ...input, schemaVersion: 1, id: 'persisted-id', status: 'approved', createdAt: '2026-10-01T10:00:00.000Z', updatedAt: '2026-10-08T10:00:00.000Z' };
   assert.equal(savedBudgetServiceLabels[record.service], 'Forro de drywall');
   assert.equal(savedBudgetStatusLabels[record.status], 'Aprovado');
+  assert.deepEqual(Object.values(savedBudgetStatusLabels), ['Rascunho', 'Enviado', 'Aprovado', 'Rejeitado', 'Concluído']);
   assert.equal(formatBudgetHistoryDate(record.updatedAt), '08/10/2026');
   assert.equal(savedBudgetAmountLabel(record).replace('\u00a0', ' '), 'R$ 2.200,00');
   assert.deepEqual(savedBudgetDetailsRoute(record.id), { pathname: '/orcamentos/[id]', params: { id: 'persisted-id' } });

@@ -12,6 +12,7 @@ export default function BudgetsScreen() {
   }
   return <BudgetScreen title="Histórico de orçamentos" subtitle="Consulte os orçamentos salvos neste dispositivo." onBack={back}>
     <BudgetHistoryList budgets={budgets} loading={loading} error={error} onRetry={retry}
-      onOpen={(id) => router.push(savedBudgetDetailsRoute(id))} />
+      onOpen={(id) => router.push(savedBudgetDetailsRoute(id))}
+      onCreate={() => router.push('/orcamento/tipo-servico')} />
   </BudgetScreen>;
 }

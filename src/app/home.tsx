@@ -33,14 +33,7 @@ export default function HomeScreen() {
           </Pressable>
 
           <View style={styles.grid}>
-            <View style={styles.row}>
-              <ShortcutCard title="Novo Orçamento" icon={{ ios: 'doc.badge.plus', android: 'note_add', web: 'note_add' }} onPress={() => router.push('/orcamento/tipo-servico')} />
-              <ShortcutCard title="Clientes" icon={{ ios: 'person.2', android: 'group', web: 'group' }} />
-            </View>
-            <View style={styles.row}>
-              <ShortcutCard title="Minhas Obras" icon={{ ios: 'building.2', android: 'construction', web: 'construction' }} />
-              <ShortcutCard title="Catálogo de Materiais" icon={{ ios: 'square.stack.3d.up', android: 'layers', web: 'layers' }} />
-            </View>
+            <ShortcutCard title="Novo Orçamento" icon={{ ios: 'doc.badge.plus', android: 'note_add', web: 'note_add' }} onPress={() => router.push('/orcamento/tipo-servico')} />
           </View>
 
           <View style={styles.banner}>
@@ -56,7 +49,8 @@ export default function HomeScreen() {
               </Pressable>
             </View>
             <BudgetHistoryList budgets={budgets} loading={loading} error={error} onRetry={retry} recentLimit={3}
-              onOpen={(id) => router.push(savedBudgetDetailsRoute(id))} />
+              onOpen={(id) => router.push(savedBudgetDetailsRoute(id))}
+              onCreate={() => router.push('/orcamento/tipo-servico')} />
           </View>
         </View>
       </ScrollView>
@@ -76,7 +70,6 @@ const styles = StyleSheet.create({
   notification: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#DFE8E3', borderRadius: 14 },
   settings: { minHeight: 48, justifyContent: 'center', padding: 14, borderWidth: 1, borderColor: '#C5CECA', borderRadius: 12 },
   grid: { gap: 12 },
-  row: { flexDirection: 'row', gap: 12 },
   banner: { backgroundColor: Brand.dark, borderRadius: 18, padding: 20, overflow: 'hidden', justifyContent: 'center', minHeight: 144 },
   blueprint: { pointerEvents: 'none', position: 'absolute', right: -25, top: 15, width: 110, height: 140, borderWidth: 2, borderColor: Brand.accent, opacity: 0.18, transform: [{ rotate: '20deg' }] },
   bannerText: { color: Brand.white, fontSize: 18, lineHeight: 27, fontWeight: '600' },

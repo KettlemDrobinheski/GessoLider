@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BudgetButton, BudgetScreen } from '@/components/budget/budget-screen';
 import { BudgetCard, BudgetLine } from '@/components/budget/budget-card';
 import { savedBudgetsRepository } from '@/services/saved-budgets';
-import type { SavedBudget } from '@/types/saved-budget';
+import type { BudgetStatus, SavedBudget } from '@/types/saved-budget';
 import { calculateWallPricing } from '@/domain/calculations/wallPricing';
 import { calculateCeilingPricing } from '@/domain/calculations/ceilingPricing';
 import { calculateWoodWallCladdingPricing } from '@/domain/calculations/woodWallCladding';
@@ -12,6 +12,7 @@ import { formatBRL } from '@/utils/currency';
 import { formatBudgetHistoryDate, savedBudgetEditRoute, savedBudgetServiceLabels, savedBudgetStatusLabels } from '@/utils/budget-history';
 
 const measure = (value: number) => `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
+const budgetStatuses: BudgetStatus[] = ['draft', 'sent', 'approved', 'rejected', 'completed'];
 
 function pricingSummary(budget: SavedBudget) {
   if (budget.service === 'wall') return calculateWallPricing(budget.budget.measurements, budget.pricing);
@@ -24,9 +25,15 @@ export default function SavedBudgetDetailsScreen() {
   const budgetId = typeof id === 'string' ? id : null;
   const [budget, setBudget] = useState<SavedBudget | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleted, setDeleted] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -45,7 +52,7 @@ export default function SavedBudgetDetailsScreen() {
       if (active) setError('Não foi possível carregar este orçamento. Tente novamente.');
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [budgetId]);
+  }, [budgetId, loadAttempt]);
 
   function back() {
     if (router.canGoBack()) router.back();
@@ -57,10 +64,27 @@ export default function SavedBudgetDetailsScreen() {
     router.push(savedBudgetEditRoute(budget));
   }
 
+  async function updateStatus(status: BudgetStatus) {
+    if (!budget || status === budget.status || updatingStatus || deleting || duplicating) return;
+    setUpdatingStatus(true);
+    setActionError(null);
+    setActionFeedback(null);
+    try {
+      const updated = await savedBudgetsRepository.update(budget.id, { status });
+      setBudget(updated);
+      setActionFeedback(`Status atualizado para ${savedBudgetStatusLabels[updated.status]}.`);
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : 'Não foi possível atualizar o status. Tente novamente.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }
+
   async function duplicate() {
     if (!budget || duplicating) return;
     setDuplicating(true);
     setActionError(null);
+    setActionFeedback(null);
     try {
       const copy = await savedBudgetsRepository.duplicate(budget.id);
       router.push(savedBudgetEditRoute(copy));
@@ -71,20 +95,74 @@ export default function SavedBudgetDetailsScreen() {
     }
   }
 
+  async function deleteBudget() {
+    if (!budget || deleting || updatingStatus || duplicating) return;
+    setDeleting(true);
+    setActionError(null);
+    setActionFeedback(null);
+    try {
+      const removed = await savedBudgetsRepository.delete(budget.id);
+      if (!removed) {
+        setActionError('Este orçamento não está mais no histórico. Volte e atualize a lista.');
+        setConfirmingDelete(false);
+        return;
+      }
+      setBudget(null);
+      setConfirmingDelete(false);
+      setDeleted(true);
+      setActionFeedback('Orçamento excluído do histórico.');
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : 'Não foi possível excluir este orçamento. Tente novamente.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function retryLoad() {
+    setLoadAttempt((attempt) => attempt + 1);
+  }
+
+  function openHistory() {
+    router.replace('/orcamentos' as Href);
+  }
+
+  if (deleted) return <BudgetScreen title="Orçamento excluído" subtitle={actionFeedback ?? 'O registro foi removido do histórico.'} onBack={openHistory}>
+    <BudgetButton label="Voltar ao histórico" onPress={openHistory} />
+  </BudgetScreen>;
+
   if (loading) return <BudgetScreen title="Carregando orçamento…" onBack={back} />;
   if (error || !budget) return <BudgetScreen title="Orçamento indisponível" subtitle={error ?? 'Não foi possível ler o registro.'} onBack={back}>
+    <BudgetButton label="Tentar carregar novamente" onPress={retryLoad} />
     <BudgetButton label="Voltar ao histórico" onPress={back} />
   </BudgetScreen>;
 
   const pricing = pricingSummary(budget);
+  const actionsBusy = duplicating || updatingStatus || deleting;
   return <BudgetScreen title={budget.client.name} subtitle={`${savedBudgetServiceLabels[budget.service]} · atualizado em ${formatBudgetHistoryDate(budget.updatedAt)}`} onBack={back}>
     <View style={styles.actions}>
       {!!actionError && <Text accessibilityRole="alert" style={styles.error}>{actionError}</Text>}
-      <BudgetButton label="Editar orçamento" onPress={edit} />
-      <BudgetButton label={duplicating ? 'Duplicando…' : 'Duplicar orçamento'} disabled={duplicating} onPress={() => { void duplicate(); }} />
+      {!!actionFeedback && <Text accessibilityRole="alert" style={styles.success}>{actionFeedback}</Text>}
+      <BudgetButton label="Editar orçamento" disabled={actionsBusy || confirmingDelete} onPress={edit} />
+      <BudgetButton label={duplicating ? 'Duplicando…' : 'Duplicar orçamento'} disabled={actionsBusy || confirmingDelete} onPress={() => { void duplicate(); }} />
+      {!confirmingDelete && <Pressable accessibilityRole="button" disabled={actionsBusy}
+        accessibilityState={{ disabled: actionsBusy }} onPress={() => { setActionError(null); setActionFeedback(null); setConfirmingDelete(true); }}
+        style={({ pressed }) => [styles.deleteButton, actionsBusy && styles.disabledButton, pressed && !actionsBusy && styles.pressed]}>
+        <Text style={styles.deleteButtonText}>Excluir orçamento</Text>
+      </Pressable>}
     </View>
     <BudgetCard title="Status e valores">
-      <BudgetLine label="Status" value={savedBudgetStatusLabels[budget.status]} />
+      <BudgetLine label="Status atual" value={savedBudgetStatusLabels[budget.status]} />
+      <View accessibilityRole="radiogroup" accessibilityLabel="Alterar status do orçamento" style={styles.statusOptions}>
+        {budgetStatuses.map((status) => {
+          const selected = status === budget.status;
+          return <Pressable key={status} accessibilityRole="radio" accessibilityState={{ checked: selected, disabled: actionsBusy || selected }}
+            disabled={actionsBusy || selected} onPress={() => { void updateStatus(status); }}
+            style={({ pressed }) => [styles.statusOption, selected && styles.statusOptionSelected, pressed && styles.pressed]}>
+            <Text style={[styles.statusOptionText, selected && styles.statusOptionTextSelected]}>{savedBudgetStatusLabels[status]}</Text>
+          </Pressable>;
+        })}
+      </View>
+      {updatingStatus && <Text style={styles.statusFeedback}>Atualizando status…</Text>}
       <BudgetLine label="Valor dos materiais" value={formatBRL(budget.pricing.materialsTotal)} />
       <BudgetLine label="Valor/m² de mão de obra" value={formatBRL(budget.pricing.laborRate)} />
       {pricing && <BudgetLine label="Mão de obra" value={formatBRL(pricing.laborTotal)} />}
@@ -135,10 +213,40 @@ export default function SavedBudgetDetailsScreen() {
       {!!budget.company.serviceRegion && <BudgetLine label="Região de atendimento" value={budget.company.serviceRegion} />}
       {!!budget.company.commercialNote && <Text>{budget.company.commercialNote}</Text>}
     </BudgetCard>
+    {confirmingDelete && <BudgetCard title="Confirmar exclusão">
+      <Text style={styles.confirmationText}>Este orçamento será removido do histórico salvo neste dispositivo. Esta ação não pode ser desfeita.</Text>
+      <View style={styles.confirmationActions}>
+        <Pressable accessibilityRole="button" disabled={deleting} accessibilityState={{ disabled: deleting }}
+          onPress={() => { void deleteBudget(); }} style={({ pressed }) => [styles.confirmDeleteButton, deleting && styles.disabledButton, pressed && !deleting && styles.pressed]}>
+          <Text style={styles.confirmDeleteButtonText}>{deleting ? 'Excluindo…' : 'Excluir definitivamente'}</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" disabled={deleting} accessibilityState={{ disabled: deleting }}
+          onPress={() => setConfirmingDelete(false)} style={({ pressed }) => [styles.cancelButton, deleting && styles.disabledButton, pressed && !deleting && styles.pressed]}>
+          <Text style={styles.cancelButtonText}>Cancelar</Text>
+        </Pressable>
+      </View>
+    </BudgetCard>}
   </BudgetScreen>;
 }
 
 const styles = StyleSheet.create({
   actions: { gap: 10 },
   error: { color: '#A33232', fontSize: 13, lineHeight: 20 },
+  success: { color: '#087354', fontSize: 13, lineHeight: 20 },
+  statusOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 8 },
+  statusOption: { minHeight: 42, paddingHorizontal: 12, paddingVertical: 9, justifyContent: 'center', borderRadius: 12, borderWidth: 1, borderColor: '#C5CECA', backgroundColor: '#FFFFFF' },
+  statusOptionSelected: { borderColor: '#087354', backgroundColor: '#087354' },
+  statusOptionText: { color: '#24352E', fontSize: 13, fontWeight: '600' },
+  statusOptionTextSelected: { color: '#FFFFFF' },
+  statusFeedback: { color: '#60706A', fontSize: 13, lineHeight: 20 },
+  confirmationText: { color: '#60706A', fontSize: 14, lineHeight: 21 },
+  confirmationActions: { gap: 8 },
+  deleteButton: { minHeight: 52, padding: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1.5, borderColor: '#A33232', backgroundColor: '#FFFFFF' },
+  deleteButtonText: { color: '#A33232', fontSize: 16, fontWeight: '700' },
+  confirmDeleteButton: { minHeight: 52, padding: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#A33232' },
+  confirmDeleteButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  cancelButton: { minHeight: 48, padding: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, borderColor: '#C5CECA' },
+  cancelButtonText: { color: '#24352E', fontSize: 15, fontWeight: '600' },
+  disabledButton: { opacity: 0.55 },
+  pressed: { opacity: 0.75 },
 });

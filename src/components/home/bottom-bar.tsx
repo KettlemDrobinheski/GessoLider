@@ -1,28 +1,34 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { StyleSheet, Text, View } from 'react-native';
+import { Link, usePathname } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Brand } from '@/constants/brand';
 
-const items: { label: string; icon: SymbolViewProps['name'] }[] = [
-  { label: 'Início', icon: { ios: 'house.fill', android: 'home', web: 'home' } },
-  { label: 'Orçamentos', icon: { ios: 'doc.text', android: 'description', web: 'description' } },
-  { label: 'Clientes', icon: { ios: 'person.2', android: 'group', web: 'group' } },
-  { label: 'Mais', icon: { ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' } },
+const items: { label: string; href: '/home' | '/orcamentos' | '/configuracoes/empresa'; icon: SymbolViewProps['name'] }[] = [
+  { label: 'Início', href: '/home', icon: { ios: 'house.fill', android: 'home', web: 'home' } },
+  { label: 'Orçamentos', href: '/orcamentos', icon: { ios: 'doc.text', android: 'description', web: 'description' } },
+  { label: 'Empresa', href: '/configuracoes/empresa', icon: { ios: 'building.2', android: 'business', web: 'business' } },
 ];
 
-// Visual navigation only: no destinations are implemented in this stage.
 export function BottomBar() {
+  const pathname = usePathname();
+
   return (
     <View style={styles.bar}>
       <View style={styles.content}>
-        {items.map((item, index) => (
-          <View key={item.label} accessible accessibilityLabel={item.label}
-            accessibilityState={{ selected: index === 0 }} style={styles.item}>
-            <View style={[styles.icon, index === 0 && styles.selected]}>
-              <SymbolView name={item.icon} size={23} tintColor={index === 0 ? Brand.primary : '#60706A'} />
-            </View>
-            <Text style={[styles.label, index === 0 && styles.selectedLabel]}>{item.label}</Text>
-          </View>
-        ))}
+        {items.map((item) => {
+          const selected = pathname === item.href;
+          return (
+            <Link key={item.href} href={item.href} asChild>
+              <Pressable accessibilityLabel={item.label} accessibilityState={{ selected }}
+                style={({ pressed }) => [styles.item, pressed && styles.pressed]}>
+                <View style={[styles.icon, selected && styles.selected]}>
+                  <SymbolView name={item.icon} size={23} tintColor={selected ? Brand.primary : '#60706A'} />
+                </View>
+                <Text style={[styles.label, selected && styles.selectedLabel]}>{item.label}</Text>
+              </Pressable>
+            </Link>
+          );
+        })}
       </View>
     </View>
   );
@@ -31,7 +37,8 @@ export function BottomBar() {
 const styles = StyleSheet.create({
   bar: { borderTopWidth: 1, borderColor: '#DFE8E3', backgroundColor: Brand.white },
   content: { width: '100%', maxWidth: 640, alignSelf: 'center', flexDirection: 'row', paddingVertical: 8, paddingHorizontal: 8 },
-  item: { flex: 1, minWidth: 0, alignItems: 'center', gap: 4 },
+  item: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 48 },
+  pressed: { opacity: 0.72 },
   icon: { paddingHorizontal: 16, paddingVertical: 5, borderRadius: 12 },
   selected: { backgroundColor: '#EDF7F1' },
   label: { color: '#60706A', fontSize: 11, textAlign: 'center' },
