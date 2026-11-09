@@ -6,9 +6,11 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WallConfigurationForm } from '@/components/budget/wall-configuration-form';
 import { Brand } from '@/constants/brand';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { parseWallBudgetInput, parseWallMeasurements } from '@/utils/wall-configuration';
 
 export default function WallConfigurationScreen() {
+  const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
   const { clientParams } = useBudgetClient();
   const { parede, orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ parede?: string | string[]; orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const savedBudget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
@@ -18,7 +20,7 @@ export default function WallConfigurationScreen() {
     return (
       <SafeAreaView style={styles.screen}>
         <StatusBar style="dark" />
-        <View style={styles.content}>
+        <View style={[styles.content, { maxWidth: maxContentWidth, padding: horizontalPadding }]}>
           <Text accessibilityRole="header" style={styles.title}>Informe as medidas da parede</Text>
           <Text style={styles.subtitle}>Volte à etapa Medidas para continuar a configuração.</Text>
           <Pressable accessibilityRole="button" onPress={() => router.replace({ pathname: '/orcamento/medidas', params: { ...clientParams, servico: 'wall' } })}
@@ -41,7 +43,7 @@ export default function WallConfigurationScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.white },
-  content: { width: '100%', maxWidth: 640, alignSelf: 'center', padding: 24, gap: 20 },
+  content: { width: '100%', alignSelf: 'center', gap: 20 },
   title: { color: Brand.dark, fontSize: 24, lineHeight: 32, fontWeight: '700' },
   subtitle: { color: '#60706A', fontSize: 14, lineHeight: 21 },
   button: { minHeight: 56, padding: 16, borderRadius: 16, backgroundColor: Brand.primary, alignItems: 'center', justifyContent: 'center' },

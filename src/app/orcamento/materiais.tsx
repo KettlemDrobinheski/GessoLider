@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BudgetSteps } from '@/components/budget/budget-steps';
 import { WallMaterialResults } from '@/components/budget/wall-material-results';
 import { Brand } from '@/constants/brand';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { insulationOptions, sidesOptions } from '@/constants/wall-configuration';
 import { calculateWallMaterials } from '@/domain/calculations/wallMaterials';
 import { formatArea } from '@/utils/measurements';
@@ -15,6 +16,7 @@ import { parseWallBudgetInput } from '@/utils/wall-configuration';
 import { BudgetButton } from '@/components/budget/budget-screen';
 
 export default function MaterialsScreen() {
+  const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
   const { clientParams } = useBudgetClient();
   const { orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const budget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
@@ -44,7 +46,7 @@ export default function MaterialsScreen() {
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="dark" />
-      <View style={styles.header}>
+        <View style={[styles.header, { maxWidth: maxContentWidth, paddingHorizontal: horizontalPadding - 4 }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={handleBack}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
           <SymbolView name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} size={24} tintColor={Brand.dark} />
@@ -53,7 +55,7 @@ export default function MaterialsScreen() {
         <View style={styles.headerBalance} />
       </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
-        <View style={styles.content}>
+          <View style={[styles.content, { maxWidth: maxContentWidth, padding: horizontalPadding }]}>
           <BudgetSteps activeStep={3} />
           <View style={styles.introduction}>
             <Text accessibilityRole="header" style={styles.title}>Materiais Calculados</Text>
@@ -93,7 +95,7 @@ export default function MaterialsScreen() {
           )}
         </View>
       </ScrollView>
-      <View style={styles.footer}>
+      <View style={[styles.footer, { maxWidth: maxContentWidth, paddingHorizontal: horizontalPadding }]}>
         <BudgetButton label="Continuar" onPress={handleContinue} disabled={result?.status !== 'valid'} />
       </View>
     </SafeAreaView>
@@ -102,14 +104,14 @@ export default function MaterialsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.white },
-  header: { width: '100%', maxWidth: 640, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  header: { width: '100%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
   backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   headerTitle: { flex: 1, color: Brand.dark, fontSize: 20, fontWeight: '700', textAlign: 'center' },
   headerBalance: { width: 44 },
   scrollView: { flex: 1 },
   scroll: { flexGrow: 1, alignItems: 'center' },
-  content: { width: '100%', maxWidth: 640, padding: 20, gap: 24 },
-  footer: { width: '100%', maxWidth: 640, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
+  content: { width: '100%', gap: 24 },
+  footer: { width: '100%', alignSelf: 'center', paddingTop: 12, paddingBottom: 16 },
   introduction: { gap: 8 },
   title: { color: Brand.dark, fontSize: 24, lineHeight: 32, fontWeight: '700' },
   subtitle: { color: '#60706A', fontSize: 14, lineHeight: 21 },

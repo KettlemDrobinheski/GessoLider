@@ -4,6 +4,7 @@ import { SymbolView } from 'expo-symbols';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/brand';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { BudgetSteps } from './budget-steps';
 
 type Props = PropsWithChildren<{
@@ -11,11 +12,12 @@ type Props = PropsWithChildren<{
 }>;
 
 export function BudgetScreen({ title, subtitle, activeStep, headerTitle = 'Novo Orçamento', onBack, footer, keyboard = false, children }: Props) {
+  const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView style={styles.screen} behavior={keyboard ? (Platform.OS === 'ios' ? 'padding' : Platform.OS === 'android' ? 'height' : undefined) : undefined}>
-        <View style={styles.header}>
+        <View style={[styles.header, { maxWidth: maxContentWidth, paddingHorizontal: horizontalPadding - 4 }]}>
           <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={onBack} style={styles.backButton}>
             <SymbolView name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} size={24} tintColor={Brand.dark} />
           </Pressable>
@@ -23,7 +25,7 @@ export function BudgetScreen({ title, subtitle, activeStep, headerTitle = 'Novo 
           <View style={styles.headerBalance} />
         </View>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <View style={styles.content}>
+          <View style={[styles.content, { maxWidth: maxContentWidth, padding: horizontalPadding }]}>
             {activeStep !== undefined && <BudgetSteps activeStep={activeStep} />}
             <View style={styles.introduction}>
               <Text accessibilityRole="header" style={styles.title}>{title}</Text>
@@ -32,7 +34,7 @@ export function BudgetScreen({ title, subtitle, activeStep, headerTitle = 'Novo 
             {children}
           </View>
         </ScrollView>
-        {!!footer && <View style={styles.footer}>{footer}</View>}
+        {!!footer && <View style={[styles.footer, { maxWidth: maxContentWidth, paddingHorizontal: horizontalPadding }]}>{footer}</View>}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -49,17 +51,17 @@ export function BudgetButton({ label, onPress, disabled = false }: { label: stri
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.white },
-  header: { width: '100%', maxWidth: 640, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  header: { width: '100%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
   backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   headerTitle: { flex: 1, color: Brand.dark, fontSize: 20, fontWeight: '700', textAlign: 'center' },
   headerBalance: { width: 44 },
   scrollView: { flex: 1 },
   scroll: { flexGrow: 1, alignItems: 'center' },
-  content: { width: '100%', maxWidth: 640, padding: 20, gap: 24 },
+  content: { width: '100%', gap: 24 },
   introduction: { gap: 8 },
   title: { color: Brand.dark, fontSize: 24, lineHeight: 32, fontWeight: '700' },
   subtitle: { color: '#60706A', fontSize: 14, lineHeight: 21 },
-  footer: { width: '100%', maxWidth: 640, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
+  footer: { width: '100%', alignSelf: 'center', paddingTop: 12, paddingBottom: 16 },
   button: { minHeight: 56, padding: 16, borderRadius: 16, backgroundColor: Brand.primary, alignItems: 'center', justifyContent: 'center' },
   disabled: { backgroundColor: '#E2E8E5' },
   buttonText: { color: Brand.white, fontSize: 18, fontWeight: '700', textAlign: 'center' },

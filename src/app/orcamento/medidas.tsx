@@ -16,6 +16,7 @@ import { BudgetSteps } from '@/components/budget/budget-steps';
 import { MeasurementField } from '@/components/budget/measurement-field';
 import { OpeningCard } from '@/components/budget/opening-card';
 import { Brand } from '@/constants/brand';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { serviceOptions, type ServiceOption } from '@/constants/services';
 import type { MeasurementDraft, OpeningDraft } from '@/types/measurements';
 import type { WallBudgetInput, WallMeasurements } from '@/types/wall-configuration';
@@ -23,6 +24,7 @@ import { dimensionFields, dimensionLabels, validateMeasurements } from '@/utils/
 import { parseWallBudgetInput } from '@/utils/wall-configuration';
 
 export default function MeasurementsScreen() {
+  const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
   const { servico, orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ servico?: string | string[]; orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
   const savedBudget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
   const savedCeiling = useMemo(() => parseCeilingBudgetInput(orcamento), [orcamento]);
@@ -33,7 +35,7 @@ export default function MeasurementsScreen() {
     return (
       <SafeAreaView style={styles.screen}>
         <StatusBar style="dark" />
-        <View style={styles.invalidService}>
+        <View style={[styles.invalidService, { maxWidth: maxContentWidth, padding: horizontalPadding }]}>
           <Text accessibilityRole="header" style={styles.title}>Selecione um serviço</Text>
           <Text style={styles.subtitle}>Escolha o tipo de serviço para informar as medidas.</Text>
           <Pressable accessibilityRole="button" onPress={() => router.replace('/orcamento/tipo-servico')} style={styles.continueButton}>
@@ -51,6 +53,7 @@ export default function MeasurementsScreen() {
 }
 
 function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, savedValues, savedId }: { service: ServiceOption; savedBudget: WallBudgetInput | null; savedCeiling: CeilingBudgetInput | null; savedCladding: WoodWallCladdingBudgetInput | null; savedValues?: string; savedId?: string }) {
+  const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
   const { clientParams } = useBudgetClient();
   const savedMeasurements = savedBudget?.measurements;
   const [dimensions, setDimensions] = useState<MeasurementDraft>({
@@ -126,7 +129,7 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
     <SafeAreaView style={styles.screen}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : Platform.OS === 'android' ? 'height' : undefined}>
-        <View style={styles.header}>
+        <View style={[styles.header, { maxWidth: maxContentWidth, paddingHorizontal: horizontalPadding - 4 }]}>
           <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={handleBack}
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
             <SymbolView name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} size={24} tintColor={Brand.dark} />
@@ -136,7 +139,7 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
         </View>
 
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-          <View style={styles.content}>
+          <View style={[styles.content, { maxWidth: maxContentWidth, padding: horizontalPadding }]}>
             <BudgetSteps activeStep={2} />
             <View style={styles.introduction}>
               <Text style={styles.service}>{service.title}</Text>
@@ -186,7 +189,7 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { maxWidth: maxContentWidth, paddingHorizontal: horizontalPadding }]}>
           <Pressable accessibilityRole="button" accessibilityState={{ disabled: !canContinue }} disabled={!canContinue}
             onPress={handleContinue} style={({ pressed }) => [styles.continueButton, !canContinue && styles.disabledButton, pressed && styles.pressed]}>
             <Text style={[styles.continueText, !canContinue && styles.disabledText]}>Continuar</Text>
@@ -199,13 +202,13 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.white },
-  header: { width: '100%', maxWidth: 640, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  header: { width: '100%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
   backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   headerTitle: { flex: 1, color: Brand.dark, fontSize: 20, fontWeight: '700', textAlign: 'center' },
   headerBalance: { width: 44 },
   scrollView: { flex: 1 },
   scroll: { flexGrow: 1, alignItems: 'center' },
-  content: { width: '100%', maxWidth: 640, padding: 20, gap: 24 },
+  content: { width: '100%', gap: 24 },
   introduction: { gap: 8 },
   service: { color: Brand.primary, fontSize: 14, fontWeight: '600' },
   title: { color: Brand.dark, fontSize: 24, lineHeight: 32, fontWeight: '700' },
@@ -221,11 +224,11 @@ const styles = StyleSheet.create({
   addButton: { minHeight: 50, padding: 14, borderWidth: 1.5, borderColor: Brand.primary, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   addText: { color: Brand.primary, fontSize: 15, fontWeight: '600' },
   error: { color: '#A33232', fontSize: 14, lineHeight: 21 },
-  footer: { width: '100%', maxWidth: 640, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
+  footer: { width: '100%', alignSelf: 'center', paddingTop: 12, paddingBottom: 16 },
   continueButton: { minHeight: 56, padding: 16, borderRadius: 16, backgroundColor: Brand.primary, alignItems: 'center', justifyContent: 'center' },
   disabledButton: { backgroundColor: '#E2E8E5' },
   continueText: { color: Brand.white, fontSize: 18, fontWeight: '700', textAlign: 'center' },
   disabledText: { color: '#60706A' },
   pressed: { opacity: 0.8 },
-  invalidService: { width: '100%', maxWidth: 640, alignSelf: 'center', padding: 24, gap: 20 },
+  invalidService: { width: '100%', alignSelf: 'center', gap: 20 },
 });

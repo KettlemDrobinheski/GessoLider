@@ -8,15 +8,17 @@ import { BudgetHistoryList } from '@/components/history/budget-history-list';
 import { ShortcutCard } from '@/components/home/shortcut-card';
 import { Brand } from '@/constants/brand';
 import { useSavedBudgets } from '@/hooks/use-saved-budgets';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { savedBudgetDetailsRoute } from '@/utils/budget-history';
 
 export default function HomeScreen() {
   const { budgets, loading, error, retry } = useSavedBudgets();
+  const { isWide, maxContentWidth, horizontalPadding } = useResponsiveLayout();
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.content}>
+        <View style={[styles.content, { maxWidth: maxContentWidth, paddingHorizontal: horizontalPadding }]}>
           <View style={styles.header}>
             <View style={styles.greeting}>
               <Text accessibilityRole="header" style={styles.title}>Olá, Kettlem!</Text>
@@ -28,20 +30,23 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          <Pressable accessibilityRole="button" onPress={() => router.push('/configuracoes/empresa')} style={styles.settings}>
-            <Text style={styles.link}>Dados da GessoLider / profissional</Text>
-          </Pressable>
+          <View style={[styles.dashboard, isWide && styles.dashboardWide]}>
+            <View style={[styles.dashboardActions, isWide && styles.dashboardActionsWide]}>
+              <Pressable accessibilityRole="button" onPress={() => router.push('/configuracoes/empresa')} style={styles.settings}>
+                <Text style={styles.link}>Dados da GessoLider / profissional</Text>
+              </Pressable>
 
-          <View style={styles.grid}>
-            <ShortcutCard title="Novo Orçamento" icon={{ ios: 'doc.badge.plus', android: 'note_add', web: 'note_add' }} onPress={() => router.push('/orcamento/tipo-servico')} />
-          </View>
+              <View style={styles.grid}>
+                <ShortcutCard title="Novo Orçamento" icon={{ ios: 'doc.badge.plus', android: 'note_add', web: 'note_add' }} onPress={() => router.push('/orcamento/tipo-servico')} />
+              </View>
 
-          <View style={styles.banner}>
-            <View style={styles.blueprint} />
-            <Text style={styles.bannerText}>Planeje, calcule e{'\n'}apresente orçamentos{'\n'}com mais profissionalismo.</Text>
-          </View>
+              <View style={styles.banner}>
+                <View style={styles.blueprint} />
+                <Text style={styles.bannerText}>Planeje, calcule e{'\n'}apresente orçamentos{'\n'}com mais profissionalismo.</Text>
+              </View>
+            </View>
 
-          <View style={styles.section}>
+          <View style={[styles.section, isWide && styles.sectionWide]}>
             <View style={styles.sectionHeader}>
               <Text accessibilityRole="header" style={styles.sectionTitle}>Orçamentos recentes</Text>
               <Pressable accessibilityRole="button" onPress={() => router.push('/orcamentos' as Href)} style={styles.seeAll}>
@@ -51,6 +56,7 @@ export default function HomeScreen() {
             <BudgetHistoryList budgets={budgets} loading={loading} error={error} onRetry={retry} recentLimit={3}
               onOpen={(id) => router.push(savedBudgetDetailsRoute(id))}
               onCreate={() => router.push('/orcamento/tipo-servico')} />
+          </View>
           </View>
         </View>
       </ScrollView>
@@ -62,13 +68,18 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.white },
   scroll: { flexGrow: 1, alignItems: 'center' },
-  content: { width: '100%', maxWidth: 640, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24, gap: 24 },
+  content: { width: '100%', alignSelf: 'center', paddingTop: 24, paddingBottom: 24, gap: 24 },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   greeting: { flex: 1, minWidth: 0, gap: 8 },
   title: { fontSize: 26, fontWeight: '700', color: Brand.dark },
   subtitle: { fontSize: 14, lineHeight: 21, color: '#60706A' },
   notification: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#DFE8E3', borderRadius: 14 },
   settings: { minHeight: 48, justifyContent: 'center', padding: 14, borderWidth: 1, borderColor: '#C5CECA', borderRadius: 12 },
+  dashboard: { gap: 24 },
+  dashboardWide: { flexDirection: 'row', alignItems: 'flex-start' },
+  dashboardActions: { gap: 24 },
+  dashboardActionsWide: { flex: 0.9, minWidth: 0 },
+  sectionWide: { flex: 1.1, minWidth: 0 },
   grid: { gap: 12 },
   banner: { backgroundColor: Brand.dark, borderRadius: 18, padding: 20, overflow: 'hidden', justifyContent: 'center', minHeight: 144 },
   blueprint: { pointerEvents: 'none', position: 'absolute', right: -25, top: 15, width: 110, height: 140, borderWidth: 2, borderColor: Brand.accent, opacity: 0.18, transform: [{ rotate: '20deg' }] },

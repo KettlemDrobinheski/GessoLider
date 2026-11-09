@@ -2,6 +2,7 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { Link, usePathname } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Brand } from '@/constants/brand';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
 const items: { label: string; href: '/home' | '/orcamentos' | '/configuracoes/empresa'; icon: SymbolViewProps['name'] }[] = [
   { label: 'Início', href: '/home', icon: { ios: 'house.fill', android: 'home', web: 'home' } },
@@ -11,10 +12,11 @@ const items: { label: string; href: '/home' | '/orcamentos' | '/configuracoes/em
 
 export function BottomBar() {
   const pathname = usePathname();
+  const { maxContentWidth } = useResponsiveLayout();
 
   return (
     <View style={styles.bar}>
-      <View style={styles.content}>
+      <View style={[styles.content, { maxWidth: maxContentWidth }]}>
         {items.map((item) => {
           const selected = pathname === item.href;
           return (
@@ -36,7 +38,7 @@ export function BottomBar() {
 
 const styles = StyleSheet.create({
   bar: { borderTopWidth: 1, borderColor: '#DFE8E3', backgroundColor: Brand.white },
-  content: { width: '100%', maxWidth: 640, alignSelf: 'center', flexDirection: 'row', paddingVertical: 8, paddingHorizontal: 8 },
+  content: { width: '100%', alignSelf: 'center', flexDirection: 'row', paddingVertical: 8, paddingHorizontal: 8 },
   item: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 48 },
   pressed: { opacity: 0.72 },
   icon: { paddingHorizontal: 16, paddingVertical: 5, borderRadius: 12 },

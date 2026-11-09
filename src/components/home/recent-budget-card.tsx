@@ -8,7 +8,7 @@ const statusColors = {
   sent: { backgroundColor: '#EAF1FA', color: '#365D85' },
   approved: { backgroundColor: '#E7F5EC', color: Brand.primary },
   rejected: { backgroundColor: '#FBEAEA', color: '#9B3232' },
-  completed: { backgroundColor: '#E7F5EC', color: Brand.primary },
+  completed: { backgroundColor: '#E9ECEB', color: '#53645E' },
 } as const;
 
 export function RecentBudgetCard({ budget, onPress }: { budget: SavedBudget; onPress: () => void }) {

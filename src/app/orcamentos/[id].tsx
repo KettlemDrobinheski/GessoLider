@@ -3,6 +3,7 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BudgetButton, BudgetScreen } from '@/components/budget/budget-screen';
 import { BudgetCard, BudgetLine } from '@/components/budget/budget-card';
+import { LoadingMessage } from '@/components/ui/loading-message';
 import { savedBudgetsRepository } from '@/services/saved-budgets';
 import type { BudgetStatus, SavedBudget } from '@/types/saved-budget';
 import { calculateWallPricing } from '@/domain/calculations/wallPricing';
@@ -130,7 +131,7 @@ export default function SavedBudgetDetailsScreen() {
     <BudgetButton label="Voltar ao histórico" onPress={openHistory} />
   </BudgetScreen>;
 
-  if (loading) return <BudgetScreen title="Carregando orçamento…" onBack={back} />;
+  if (loading) return <BudgetScreen title="Orçamento" onBack={back}><LoadingMessage label="Carregando orçamento…" /></BudgetScreen>;
   if (error || !budget) return <BudgetScreen title="Orçamento indisponível" subtitle={error ?? 'Não foi possível ler o registro.'} onBack={back}>
     <BudgetButton label="Tentar carregar novamente" onPress={retryLoad} />
     <BudgetButton label="Voltar ao histórico" onPress={back} />

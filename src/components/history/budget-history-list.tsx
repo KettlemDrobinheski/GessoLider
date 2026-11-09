@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { SavedBudget } from '@/types/saved-budget';
 import { RecentBudgetCard } from '@/components/home/recent-budget-card';
+import { LoadingMessage } from '@/components/ui/loading-message';
 import { Brand } from '@/constants/brand';
 import { budgetHistoryState } from '@/utils/budget-history';
 
@@ -17,7 +18,7 @@ type Props = {
 export function BudgetHistoryList({ budgets, loading, error, onRetry, onOpen, onCreate, recentLimit }: Props) {
   const visibleBudgets = recentLimit ? budgets.slice(0, recentLimit) : budgets;
   const state = budgetHistoryState(budgets, loading, error);
-  if (state === 'loading') return <Text accessibilityRole="alert" style={styles.message}>Carregando orçamentos…</Text>;
+  if (state === 'loading') return <LoadingMessage label="Carregando orçamentos…" />;
   if (state === 'error') return <View style={styles.messageBlock}>
     <Text accessibilityRole="alert" style={styles.message}>{error}</Text>
     <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retry}><Text style={styles.retryText}>Tentar novamente</Text></Pressable>
