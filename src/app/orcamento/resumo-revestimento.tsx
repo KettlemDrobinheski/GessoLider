@@ -60,7 +60,7 @@ export default function WoodWallCladdingSummaryScreen() {
       <SaveBudgetAction input={!companyLoading && !companyError ? buildSavedBudgetInput('lining', budget, pricing, profile, client) : null}
         unavailableMessage={companyError ? 'Não foi possível carregar os dados da empresa. Tente novamente antes de salvar.' : undefined}
         savedId={typeof orcamentoSalvoId === 'string' ? orcamentoSalvoId : undefined} />
-      <BudgetDocumentPreview source={{ service: 'lining', budget, materials, pricing }} client={client} />
+      <BudgetDocumentPreview source={{ service: 'lining', budget, materials, pricing }} client={client} savedBudgetId={typeof orcamentoSalvoId === 'string' ? orcamentoSalvoId : undefined} />
     </BudgetScreen>
   );
 }

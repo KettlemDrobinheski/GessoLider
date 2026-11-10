@@ -1,12 +1,19 @@
 import type { BudgetDocumentData, BudgetDocumentSource, DocumentRow } from '../types/budget-document';
 import type { CompanyProfile } from '../types/company-profile';
 import type { ClientData } from '../types/client';
+import type { SavedBudget } from '../types/saved-budget';
 import { formatArea } from './measurements';
 import { toCents } from './currency';
 import { validateClient } from './client';
 import { validateCompanyProfile } from './company-profile';
 import { boardDimensionLabel, insulationOptions } from '../constants/wall-configuration';
 import { ceilingMaterials } from '../constants/ceiling';
+import { calculateWallMaterials } from '../domain/calculations/wallMaterials';
+import { calculateCeiling } from '../domain/calculations/ceiling';
+import { calculateWoodWallCladding } from '../domain/calculations/woodWallCladding';
+import { calculateWallPricing } from '../domain/calculations/wallPricing';
+import { calculateCeilingPricing } from '../domain/calculations/ceilingPricing';
+import { calculateWoodWallCladdingPricing } from '../domain/calculations/woodWallCladding';
 import {
   ceilingAccessoriesNotice,
   ceilingProfileDirectionNotice,
@@ -14,6 +21,7 @@ import {
   wallAcousticBandEstimateNotice,
   wallGuideEstimateNotice,
   wallInsulationEstimateNotice,
+  wallOpeningsEstimateNotice,
 } from '../constants/budget-document';
 
 const decimal = (value: number) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -66,7 +74,12 @@ function assertMaterialsMatchBudget(source: BudgetDocumentSource): void {
     };
   }
 
-  if (!hasSameData(source.materials.calculationInput, expectedInput)) {
+  const actualInput = source.materials.calculationInput;
+  const actualOpenings = (actualInput as { openings?: unknown }).openings;
+  if (source.service === 'wall' && source.budget.measurements.openings.length > 0 && Array.isArray(actualOpenings) && actualOpenings.length === 0) {
+    expectedInput = { ...(expectedInput as Record<string, unknown>), openings: [] };
+  }
+  if (!hasSameData(actualInput, expectedInput)) {
     throw new Error('Os materiais calculados não correspondem às medidas e configurações deste orçamento. Recalcule os materiais antes de continuar.');
   }
 }
@@ -115,6 +128,10 @@ export function buildBudgetDocumentData({ company, client, source, issueDate }: 
     const { measurements: sizes, configuration: config } = source.budget;
     const result = source.materials;
     measurements.push(row('Comprimento', meters(sizes.length)), row('Altura', meters(sizes.height)), row('Área', formatArea(result.wallArea)));
+    for (const opening of sizes.openings) {
+      const openingName = opening.type === 'door' ? 'Porta' : 'Janela';
+      measurements.push(row(`${openingName} (${opening.quantity})`, `${meters(opening.width)} × ${meters(opening.height)}`));
+    }
     configuration.push(row('Tipo de placa', config.boardType), row('Perfil', `${config.profileWidth} mm`),
       row('Espaçamento', `${config.studSpacingCm} cm`), row('Aplicação', `${config.sides} ${config.sides === 1 ? 'lado' : 'lados'}`),
       row('Perda', `${config.wastePercent}%`), row('Isolamento', insulationOptions.find((option) => option.value === config.insulation)?.label ?? 'Não'),
@@ -129,6 +146,7 @@ export function buildBudgetDocumentData({ company, client, source, issueDate }: 
       materials.push(row('Parafusos metal-metal', 'Quantidade a definir'));
     }
     configuration.push(row('Estimativa das guias', wallGuideEstimateNotice));
+    if (sizes.openings.length) configuration.push(row('Premissa das aberturas', wallOpeningsEstimateNotice));
     if (result.insulation) configuration.push(row('Premissa do isolamento', wallInsulationEstimateNotice));
     if (result.consumables.acousticBand) configuration.push(row('Premissa da banda acústica', wallAcousticBandEstimateNotice));
     if (result.insulation) materials.push(row(insulationOptions.find((option) => option.value === result.insulation?.type)?.label ?? 'Isolamento', formatArea(result.insulation.areaWithWaste)));
@@ -166,4 +184,24 @@ export function buildBudgetDocumentData({ company, client, source, issueDate }: 
 export function budgetPdfFilename(data: Pick<BudgetDocumentData, 'company' | 'client'>): string {
   const sanitize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/g, '');
   return ['Orcamento', sanitize(data.company.companyName) || 'GessoLider', sanitize(data.client.name)].filter(Boolean).join('-') + '.pdf';
+}
+
+/** Rebuild a document using the company and client snapshots stored in history. */
+export function buildSavedBudgetDocumentData(record: SavedBudget, issueDate = record.updatedAt): BudgetDocumentData {
+  if (record.service === 'wall') {
+    const materials = calculateWallMaterials({ ...record.budget.measurements, openings: [], ...record.budget.configuration });
+    const pricing = calculateWallPricing(record.budget.measurements, record.pricing);
+    if (materials.status !== 'valid' || !pricing) throw new Error('Os dados salvos deste orçamento não permitem gerar o documento.');
+    return buildBudgetDocumentData({ company: record.company, client: record.client, source: { service: 'wall', budget: record.budget, materials, pricing }, issueDate });
+  }
+  if (record.service === 'ceiling') {
+    const materials = calculateCeiling({ ...record.budget.measurements, ...record.budget.configuration });
+    const pricing = calculateCeilingPricing(record.budget.measurements, record.pricing);
+    if (materials.status !== 'valid' || !pricing) throw new Error('Os dados salvos deste orçamento não permitem gerar o documento.');
+    return buildBudgetDocumentData({ company: record.company, client: record.client, source: { service: 'ceiling', budget: record.budget, materials, pricing }, issueDate });
+  }
+  const materials = calculateWoodWallCladding({ ...record.budget.measurements, ...record.budget.configuration });
+  const pricing = calculateWoodWallCladdingPricing(record.budget.measurements, record.pricing);
+  if (materials.status !== 'valid' || !pricing) throw new Error('Os dados salvos deste orçamento não permitem gerar o documento.');
+  return buildBudgetDocumentData({ company: record.company, client: record.client, source: { service: 'lining', budget: record.budget, materials, pricing }, issueDate });
 }

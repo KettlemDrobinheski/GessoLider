@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { BudgetDocumentSource } from '@/types/budget-document';
@@ -8,19 +8,39 @@ import { buildBudgetDocumentData } from '@/utils/budget-document';
 import { generateBudgetPdf, shareBudgetPdf, type GeneratedBudgetPdf } from '@/services/budget-pdf';
 import { BudgetButton, BudgetScreen } from './budget-screen';
 import { BudgetDocument } from './budget-document';
+import { savedBudgetsRepository } from '@/services/saved-budgets';
+import type { CompanyProfile } from '@/types/company-profile';
 
-export function BudgetDocumentPreview({ source, client }: { source: BudgetDocumentSource; client: ClientData | null }) {
+export function BudgetDocumentPreview({ source, client, savedBudgetId }: { source: BudgetDocumentSource; client: ClientData | null; savedBudgetId?: string }) {
   const { profile, loading, loadError } = useCompanyProfile();
   const [issueDate] = useState(() => new Date().toISOString());
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [savedCompany, setSavedCompany] = useState<CompanyProfile | null>(null);
+  const [savedCompanyLoading, setSavedCompanyLoading] = useState(!!savedBudgetId);
+  const [savedCompanyError, setSavedCompanyError] = useState<string | null>(null);
   const lock = useRef(false);
   const generated = useRef<{ key: string; pdf: GeneratedBudgetPdf } | null>(null);
+  useEffect(() => {
+    let active = true;
+    if (!savedBudgetId) { setSavedCompany(null); setSavedCompanyLoading(false); setSavedCompanyError(null); return () => { active = false; }; }
+    setSavedCompany(null); setSavedCompanyLoading(true); setSavedCompanyError(null);
+    void savedBudgetsRepository.getById(savedBudgetId).then((record) => {
+      if (!active) return;
+      if (!record) setSavedCompanyError('Não foi possível recuperar a empresa registrada neste orçamento.');
+      else setSavedCompany(record.company);
+    }).catch(() => { if (active) setSavedCompanyError('Não foi possível recuperar os dados históricos da empresa.'); })
+      .finally(() => { if (active) setSavedCompanyLoading(false); });
+    return () => { active = false; };
+  }, [savedBudgetId]);
   const result = useMemo(() => {
-    try { return { data: buildBudgetDocumentData({ company: profile, client, source, issueDate }), error: null }; }
+    try {
+      if (savedBudgetId && !savedCompany) throw new Error(savedCompanyError ?? 'Carregando os dados históricos da empresa.');
+      return { data: buildBudgetDocumentData({ company: savedCompany ?? profile, client, source, issueDate }), error: null };
+    }
     catch (error) { return { data: null, error: error instanceof Error ? error.message : 'Revise os dados do orçamento.' }; }
-  }, [profile, client, source, issueDate]);
+  }, [profile, client, source, issueDate, savedBudgetId, savedCompany, savedCompanyError]);
   async function generate(share: boolean) {
     if (!result.data || lock.current || loading || loadError) return;
     lock.current = true;
@@ -36,7 +56,7 @@ export function BudgetDocumentPreview({ source, client }: { source: BudgetDocume
       setFeedback(error instanceof Error ? error.message : 'Não foi possível concluir a ação. Tente novamente.');
     } finally { lock.current = false; setBusy(false); }
   }
-  const unavailable = loading || !!loadError || !result.data;
+  const unavailable = loading || !!loadError || savedCompanyLoading || !!savedCompanyError || !result.data;
   return <>
     {(result.error || loadError) && <Text accessibilityRole="alert" style={styles.note}>{loadError || result.error}</Text>}
     <BudgetButton label="Visualizar orçamento final" disabled={unavailable} onPress={() => { setFeedback(null); setVisible(true); }} />

@@ -3,6 +3,7 @@ export const materialEstimateNotice = 'As quantidades são estimativas. As placa
 export const wallGuideEstimateNotice = 'As guias são estimadas pela metragem total, sem plano de corte das peças.';
 export const wallInsulationEstimateNotice = 'Área interna da parede, sem conversão para rolos, pacotes ou placas.';
 export const wallAcousticBandEstimateNotice = 'Estimativa por área, sem levantamento linear detalhado dos encontros da parede.';
+export const wallOpeningsEstimateNotice = 'As medidas das portas e janelas estão registradas abaixo. A estimativa de materiais não desconta as aberturas nem ajusta os perfis para seus vãos.';
 
 export const ceilingProfileDirectionNotice = 'A estimativa considera as linhas F530 no sentido do comprimento do ambiente, distribuídas ao longo da largura.';
 export const ceilingProfileEstimateNotice = 'F530 e cantoneiras são estimados por trecho e por peças comerciais. Este cálculo não é um plano de montagem, não define emendas e não calcula o aproveitamento real das sobras.';

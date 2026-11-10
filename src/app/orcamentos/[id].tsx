@@ -3,6 +3,7 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BudgetButton, BudgetScreen } from '@/components/budget/budget-screen';
 import { BudgetCard, BudgetLine } from '@/components/budget/budget-card';
+import { SavedBudgetDocumentActions } from '@/components/budget/saved-budget-document-actions';
 import { LoadingMessage } from '@/components/ui/loading-message';
 import { savedBudgetsRepository } from '@/services/saved-budgets';
 import type { BudgetStatus, SavedBudget } from '@/types/saved-budget';
@@ -144,6 +145,7 @@ export default function SavedBudgetDetailsScreen() {
       {!!actionError && <Text accessibilityRole="alert" style={styles.error}>{actionError}</Text>}
       {!!actionFeedback && <Text accessibilityRole="alert" style={styles.success}>{actionFeedback}</Text>}
       <BudgetButton label="Editar orçamento" disabled={actionsBusy || confirmingDelete} onPress={edit} />
+      <SavedBudgetDocumentActions budget={budget} />
       <BudgetButton label={duplicating ? 'Duplicando…' : 'Duplicar orçamento'} disabled={actionsBusy || confirmingDelete} onPress={() => { void duplicate(); }} />
       {!confirmingDelete && <Pressable accessibilityRole="button" disabled={actionsBusy}
         accessibilityState={{ disabled: actionsBusy }} onPress={() => { setActionError(null); setActionFeedback(null); setConfirmingDelete(true); }}
