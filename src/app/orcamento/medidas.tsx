@@ -30,7 +30,7 @@ export default function MeasurementsScreen() {
   const savedBudget = useMemo(() => parseWallBudgetInput(orcamento), [orcamento]);
   const savedCeiling = useMemo(() => parseCeilingBudgetInput(orcamento), [orcamento]);
   const savedCladding = useMemo(() => parseWoodWallCladdingBudgetInput(orcamento), [orcamento]);
-  const service = typeof servico === 'string' ? serviceOptions.find((option) => option.id === servico) : undefined;
+  const service = typeof servico === 'string' ? serviceOptions.find((option) => option.id === servico && option.available !== false) : undefined;
 
   if (!service) {
     return (

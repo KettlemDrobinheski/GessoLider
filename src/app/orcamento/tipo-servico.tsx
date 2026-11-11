@@ -15,7 +15,7 @@ import { DraftSaveStatus, useBudgetDraft } from '@/hooks/use-budget-draft';
 export default function ServiceTypeScreen() {
   const { draft, saveFields } = useBudgetDraft();
   const initialService = draft?.formData.service;
-  const [selectedService, setSelectedService] = useState<ServiceType | null>(serviceOptions.some(({ id }) => id === initialService) ? initialService as ServiceType : null);
+  const [selectedService, setSelectedService] = useState<ServiceType | null>(serviceOptions.some(({ id, available }) => id === initialService && available !== false) ? initialService as ServiceType : null);
   const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
 
   function handleBack() {
@@ -55,7 +55,8 @@ export default function ServiceTypeScreen() {
             {serviceOptions.map((service) => (
               <ServiceCard key={service.id} service={service}
                 selected={selectedService === service.id} onSelect={(id) => {
-                  const changed = selectedService !== null && selectedService !== id;
+                  const previousService = selectedService ?? draft?.service ?? null;
+                  const changed = previousService !== null && previousService !== id;
                   setSelectedService(id);
                   void saveFields({
                     service: id,

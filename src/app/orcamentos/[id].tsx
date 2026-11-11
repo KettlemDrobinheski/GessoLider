@@ -35,7 +35,6 @@ export default function SavedBudgetDetailsScreen() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [deleted, setDeleted] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
@@ -117,10 +116,8 @@ export default function SavedBudgetDetailsScreen() {
         setConfirmingDelete(false);
         return;
       }
-      setBudget(null);
       setConfirmingDelete(false);
-      setDeleted(true);
-      setActionFeedback('Orçamento excluído do histórico.');
+      router.replace('/orcamentos' as Href);
     } catch (cause) {
       setActionError(cause instanceof Error ? cause.message : 'Não foi possível excluir este orçamento. Tente novamente.');
     } finally {
@@ -135,10 +132,6 @@ export default function SavedBudgetDetailsScreen() {
   function openHistory() {
     router.replace('/orcamentos' as Href);
   }
-
-  if (deleted) return <BudgetScreen title="Orçamento excluído" subtitle={actionFeedback ?? 'O registro foi removido do histórico.'} onBack={openHistory}>
-    <BudgetButton label="Voltar ao histórico" onPress={openHistory} />
-  </BudgetScreen>;
 
   if (loading) return <BudgetScreen title="Orçamento" onBack={back}><LoadingMessage label="Carregando orçamento…" /></BudgetScreen>;
   if (error || !budget) return <BudgetScreen title="Orçamento indisponível" subtitle={error ?? 'Não foi possível ler o registro.'} onBack={back}>
@@ -225,6 +218,7 @@ export default function SavedBudgetDetailsScreen() {
       {!!budget.company.commercialNote && <Text>{budget.company.commercialNote}</Text>}
     </BudgetCard>
     {confirmingDelete && <BudgetCard title="Confirmar exclusão">
+      <Text style={styles.confirmationText}>{budget.client.name} · {savedBudgetServiceLabels[budget.service]}</Text>
       <Text style={styles.confirmationText}>Este orçamento será removido do histórico salvo neste dispositivo. Esta ação não pode ser desfeita.</Text>
       <View style={styles.confirmationActions}>
         <Pressable accessibilityRole="button" disabled={deleting} accessibilityState={{ disabled: deleting }}

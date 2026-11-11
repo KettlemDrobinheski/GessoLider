@@ -11,6 +11,7 @@ const { parseCeilingBudgetInput } = await import('../src/utils/ceiling.ts');
 const { parseWoodWallCladdingBudgetInput } = await import('../src/utils/wood-wall-cladding.ts');
 const { parseWallPricingInput } = await import('../src/utils/wall-pricing.ts');
 const { parseBudgetPricingInput } = await import('../src/utils/budget-pricing.ts');
+const { buildSavedBudgetDocumentData } = await import('../src/utils/budget-document.ts');
 
 function memoryStorage() {
   const entries = new Map();
@@ -116,6 +117,10 @@ test('opens each saved service with validated inputs and persists edits under th
     assert.deepEqual(edited.client, editedClient);
     assert.deepEqual(edited.company, saved.company);
     assert.notEqual(edited.updatedAt, saved.updatedAt);
+    const document = buildSavedBudgetDocumentData(edited);
+    assert.equal(document.client.name, editedClient.name);
+    assert.equal(document.pricing.notes, 'Editado');
+    assert.equal(document.company.companyName, saved.company.companyName);
 
     const reloadedRepository = createSavedBudgetsRepository(storage);
     const reloaded = await reloadedRepository.getById(saved.id);

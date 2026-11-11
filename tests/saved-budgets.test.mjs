@@ -71,6 +71,20 @@ test('updates data and status while preserving ID and creation date', async () =
   assert.notEqual(updated.updatedAt, original.updatedAt);
 });
 
+test('persists each supported status transition across repository reloads', async () => {
+  const storage = memoryStorage();
+  const repo = repository(storage, ['status-id'], ['2026-10-01T10:00:00.000Z']);
+  const created = await repo.create(fixtures()[0]);
+  assert.equal(created.status, 'draft');
+  for (const status of ['sent', 'approved', 'rejected', 'completed', 'draft']) {
+    const updated = await repo.update(created.id, { status });
+    assert.equal(updated.status, status);
+    const reopened = createSavedBudgetsRepository(storage);
+    assert.equal((await reopened.getById(created.id)).status, status);
+    assert.equal((await reopened.list())[0].status, status);
+  }
+});
+
 test('deletes only the selected record', async () => {
   const repo = repository();
   await repo.create(fixtures()[0]);
@@ -78,6 +92,19 @@ test('deletes only the selected record', async () => {
   assert.equal(await repo.delete('id-1'), true);
   assert.equal(await repo.delete('id-1'), false);
   assert.deepEqual((await repo.list()).map(({ id }) => id), ['id-2']);
+});
+
+test('keeps the complete history intact when deletion storage fails', async () => {
+  const storage = memoryStorage();
+  const repo = repository(storage);
+  await repo.create(fixtures()[0]);
+  await repo.create(fixtures()[1]);
+  const previous = storage.entries.get(savedBudgetsKey);
+  storage.setItem = async () => { throw new Error('delete write failed'); };
+  await assert.rejects(repo.delete('id-1'), /delete write failed/);
+  assert.equal(storage.entries.get(savedBudgetsKey), previous);
+  storage.setItem = async (key, value) => storage.entries.set(key, value);
+  assert.deepEqual((await repo.list()).map(({ id }) => id), ['id-2', 'id-1']);
 });
 
 test('duplicates as an independent draft with a new ID and dates', async () => {
@@ -113,6 +140,24 @@ test('duplicates every service type without changing its original configuration 
     await repo.update(copy.id, { pricing: { ...copy.pricing, notes: 'Somente na cópia' } });
     assert.deepEqual(await repo.getById(original.id), original);
   }
+});
+
+test('editing a duplicate preserves the original and leaves the active in-progress draft untouched', async () => {
+  const storage = memoryStorage();
+  const repo = repository(storage, ['original', 'draft', 'copy'], [
+    '2026-10-01T10:00:00.000Z', '2026-10-02T10:00:00.000Z', '2026-10-03T10:00:00.000Z',
+  ]);
+  const original = await repo.create(fixtures()[0]);
+  const finalized = await repo.update(original.id, { status: 'completed' });
+  const activeDraft = await repo.saveDraft({ route: '/orcamento/medidas', params: { servico: 'ceiling' }, service: 'ceiling', formData: { measurements: { dimensions: { length: '4' } } } });
+  const copy = await repo.duplicate(original.id);
+  const editedCopy = await repo.update(copy.id, { client: { ...copy.client, name: 'Cliente da cópia' } });
+  assert.notEqual(copy.id, original.id);
+  assert.equal(copy.status, 'draft');
+  assert.equal(editedCopy.client.name, 'Cliente da cópia');
+  assert.deepEqual(await repo.getById(original.id), finalized);
+  assert.equal((await repo.getDraft()).id, activeDraft.id);
+  assert.deepEqual((await repo.list()).map(({ id }) => id).sort(), [copy.id, 'original'].sort());
 });
 
 test('validates status, schema, business data, service and timestamps', () => {

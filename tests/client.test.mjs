@@ -3,7 +3,7 @@ import test from 'node:test';
 import './register-typescript.mjs';
 
 const { emptyClient, validateClient, formatPhone, formatCep, normalizePhone, normalizeCep,
-  formatClientAddress, parseClientData, withClient, clientRouteKeys } = await import('../src/utils/client.ts');
+  formatClientAddress, parseClientData, resolveBudgetClient, withClient, clientRouteKeys } = await import('../src/utils/client.ts');
 const client = { ...emptyClient, name: 'João da Silva' };
 
 test('rejects empty and whitespace-only names', () => {
@@ -62,6 +62,14 @@ test('serializes structured client fields for future document generation', () =>
   const full = { ...client, phone: '41999999999', cep: '83750000', complement: 'Fundos', notes: 'Pintura' };
   assert.deepEqual(parseClientData(JSON.stringify(full)), full);
   for (const input of [undefined, [], '{}', 'null', '{', JSON.stringify({ ...client, phone: 123 })]) assert.equal(parseClientData(input), null);
+});
+test('active draft client takes precedence over the last edited saved budget, while saved edits keep their own client', () => {
+  const draftClient = { ...client, name: 'Cliente do rascunho' };
+  const savedClient = { ...client, name: 'Cliente do histórico' };
+  const legacyClient = { ...client, name: 'Cliente legado' };
+  assert.deepEqual(resolveBudgetClient(savedClient, draftClient, legacyClient, false), draftClient);
+  assert.deepEqual(resolveBudgetClient(savedClient, draftClient, legacyClient, true), savedClient);
+  assert.deepEqual(resolveBudgetClient(savedClient, { name: 'inválido' }, legacyClient, false), savedClient);
 });
 for (const servico of ['wall', 'ceiling', 'lining']) {
   test(`editing client preserves all ${servico} budget route parameters`, () => {

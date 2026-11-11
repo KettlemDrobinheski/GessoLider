@@ -51,6 +51,15 @@ export function parseClientData(parameter: string | string[] | undefined): Clien
   } catch { return null; }
 }
 
+export function resolveBudgetClient(persisted: ClientData | null, draft: unknown, legacy: ClientData | null, editingSavedBudget: boolean): ClientData | null {
+  if (!editingSavedBudget && draft && typeof draft === 'object' && !Array.isArray(draft)
+    && Object.keys(emptyClient).every((key) => typeof (draft as Record<string, unknown>)[key] === 'string')) {
+    const draftClient = validateClient(draft as ClientData).value;
+    if (draftClient) return draftClient;
+  }
+  return persisted ?? legacy;
+}
+
 export function formatClientAddress(client: ClientData): string[] {
   return [
     [client.street.trim(), client.number.trim()].filter(Boolean).join(', '),

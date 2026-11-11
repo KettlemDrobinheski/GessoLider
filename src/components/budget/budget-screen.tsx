@@ -42,7 +42,7 @@ export function BudgetScreen({ title, subtitle, activeStep, headerTitle = 'Novo 
   );
 }
 
-export function BudgetButton({ label, onPress, disabled = false }: { label: string; onPress?: () => void; disabled?: boolean }) {
+export function BudgetButton({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
       style={({ pressed }) => [styles.button, disabled && styles.disabled, pressed && styles.pressed]}>

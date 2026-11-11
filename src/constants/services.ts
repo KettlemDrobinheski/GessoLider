@@ -7,6 +7,7 @@ export type ServiceOption = {
   title: string;
   description: string;
   icon: SymbolViewProps['name'];
+  available?: boolean;
 };
 
 export const serviceOptions: readonly ServiceOption[] = [
@@ -33,5 +34,6 @@ export const serviceOptions: readonly ServiceOption[] = [
     title: 'Nichos e Detalhes',
     description: 'Projetos personalizados em drywall',
     icon: { ios: 'square.grid.3x3', android: 'dashboard', web: 'dashboard' },
+    available: false,
   },
 ];

@@ -2,7 +2,7 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Brand } from '@/constants/brand';
 
-type Props = { title: string; icon: SymbolViewProps['name']; onPress?: () => void };
+type Props = { title: string; icon: SymbolViewProps['name']; onPress: () => void };
 
 export function ShortcutCard({ title, icon, onPress }: Props) {
   return (

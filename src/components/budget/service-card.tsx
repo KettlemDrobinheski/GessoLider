@@ -11,20 +11,22 @@ type Props = {
 };
 
 export function ServiceCard({ service, selected, onSelect }: Props) {
+  const unavailable = service.available === false;
   return (
     <Pressable
-      accessibilityRole="radio"
-      accessibilityLabel={`${service.title}. ${service.description}`}
-      accessibilityState={{ checked: selected }}
+      accessibilityRole={unavailable ? 'text' : 'radio'}
+      accessibilityLabel={`${service.title}. ${service.description}${unavailable ? '. Em breve.' : ''}`}
+      accessibilityState={{ checked: selected, disabled: unavailable }}
       aria-checked={selected}
+      disabled={unavailable}
       onPress={() => onSelect(service.id)}
-      style={({ pressed }) => [styles.card, selected && styles.selected, pressed && styles.pressed]}>
+      style={({ pressed }) => [styles.card, selected && styles.selected, unavailable && styles.unavailable, pressed && !unavailable && styles.pressed]}>
       <View style={styles.icon}>
         <SymbolView name={service.icon} size={28} tintColor={Brand.primary} />
       </View>
       <View style={styles.copy}>
         <Text style={styles.title}>{service.title}</Text>
-        <Text style={styles.description}>{service.description}</Text>
+        <Text style={styles.description}>{unavailable ? `${service.description} · Em breve` : service.description}</Text>
       </View>
       <View style={[styles.indicator, selected && styles.checked]}>
         {selected && <Text style={styles.checkmark}>✓</Text>}
@@ -40,6 +42,7 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.white, boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.05)',
   },
   selected: { borderColor: Brand.primary, backgroundColor: '#EDF7F1' },
+  unavailable: { backgroundColor: '#F5F7F6', opacity: 0.72 },
   pressed: { opacity: 0.8 },
   icon: { padding: 10, borderRadius: 12, backgroundColor: '#EDF7F1' },
   copy: { flex: 1, minWidth: 0, gap: 5 },
