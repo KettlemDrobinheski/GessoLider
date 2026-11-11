@@ -17,6 +17,7 @@ function memoryStorage() {
     entries,
     async getItem(key) { return entries.get(key) ?? null; },
     async setItem(key, value) { entries.set(key, value); },
+    async removeItem(key) { entries.delete(key); },
   };
 }
 

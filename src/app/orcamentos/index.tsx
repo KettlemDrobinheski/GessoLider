@@ -3,9 +3,11 @@ import { BudgetHistoryList } from '@/components/history/budget-history-list';
 import { BudgetScreen } from '@/components/budget/budget-screen';
 import { useSavedBudgets } from '@/hooks/use-saved-budgets';
 import { savedBudgetDetailsRoute } from '@/utils/budget-history';
+import { useBudgetDraft } from '@/hooks/use-budget-draft';
 
 export default function BudgetsScreen() {
   const { budgets, loading, error, retry } = useSavedBudgets();
+  const { draft, resume } = useBudgetDraft();
   function back() {
     if (router.canGoBack()) router.back();
     else router.replace('/home');
@@ -13,6 +15,6 @@ export default function BudgetsScreen() {
   return <BudgetScreen title="Histórico de orçamentos" subtitle="Consulte os orçamentos salvos neste dispositivo." onBack={back}>
     <BudgetHistoryList budgets={budgets} loading={loading} error={error} onRetry={retry}
       onOpen={(id) => router.push(savedBudgetDetailsRoute(id))}
-      onCreate={() => router.push('/orcamento/tipo-servico')} />
+      onCreate={() => draft ? resume() : router.push('/orcamento/tipo-servico')} />
   </BudgetScreen>;
 }

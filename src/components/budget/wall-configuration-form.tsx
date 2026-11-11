@@ -14,26 +14,29 @@ import { BudgetSteps } from './budget-steps';
 import { ConfigurationOption } from './configuration-option';
 import { ConfigurationSection } from './configuration-section';
 import { WallConfigurationSummary } from './wall-configuration-summary';
+import { DraftSaveStatus, useBudgetDraft } from '@/hooks/use-budget-draft';
 
 type Props = { measurements: WallMeasurements; initialConfiguration?: WallConfiguration; onContinue?: (budget: WallBudgetInput) => void };
 
 export function WallConfigurationForm({ measurements, initialConfiguration, onContinue }: Props) {
   const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
   const { clientParams } = useBudgetClient();
-  const [draft, setDraft] = useState<WallConfigurationDraft>({
-    boardType: initialConfiguration?.boardType ?? null,
-    profileWidth: initialConfiguration?.profileWidth ?? null,
-    studSpacingCm: initialConfiguration?.studSpacingCm ?? null,
-    sides: initialConfiguration?.sides ?? null,
-    wastePercent: initialConfiguration?.wastePercent ?? null,
-    hasInsulation: initialConfiguration?.insulation != null,
-    insulationType: initialConfiguration?.insulation ?? null,
-    acousticBand: initialConfiguration?.acousticBand ?? null,
+  const { draft: savedDraft, saveFields } = useBudgetDraft();
+  const recovered = !initialConfiguration && savedDraft?.service === 'wall'
+    ? savedDraft.formData.wallConfiguration as WallConfigurationDraft | undefined
+    : undefined;
+  const [draft, setDraft] = useState<WallConfigurationDraft>(() => recovered ?? {
+    boardType: initialConfiguration?.boardType ?? null, profileWidth: initialConfiguration?.profileWidth ?? null,
+    studSpacingCm: initialConfiguration?.studSpacingCm ?? null, sides: initialConfiguration?.sides ?? null,
+    wastePercent: initialConfiguration?.wastePercent ?? null, hasInsulation: initialConfiguration?.insulation != null,
+    insulationType: initialConfiguration?.insulation ?? null, acousticBand: initialConfiguration?.acousticBand ?? null,
   });
   const configuration = buildWallConfiguration(draft);
 
   function updateDraft(update: Partial<WallConfigurationDraft>) {
-    setDraft((current) => ({ ...current, ...update }));
+    const next = { ...draft, ...update };
+    setDraft(next);
+    void saveFields({ wallConfiguration: next }, 'wall').catch(() => undefined);
   }
 
   function handleBack() {
@@ -64,6 +67,7 @@ export function WallConfigurationForm({ measurements, initialConfiguration, onCo
             <Text accessibilityRole="header" style={styles.title}>Configuração da Parede</Text>
             <Text style={styles.subtitle}>Escolha os materiais que serão utilizados.</Text>
           </View>
+          <DraftSaveStatus />
           <ConfigurationSection title="Tipo de placa">
             {boardOptions.map((option) => (
               <ConfigurationOption key={option.value} label={option.label} description={boardDimensionLabel}

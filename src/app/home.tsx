@@ -1,5 +1,4 @@
 import { StatusBar } from 'expo-status-bar';
-import { SymbolView } from 'expo-symbols';
 import { router, type Href } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,9 +9,19 @@ import { Brand } from '@/constants/brand';
 import { useSavedBudgets } from '@/hooks/use-saved-budgets';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { savedBudgetDetailsRoute } from '@/utils/budget-history';
+import { useLocalAccess } from '@/hooks/use-local-access';
+import { useBudgetDraft } from '@/hooks/use-budget-draft';
+import { useState } from 'react';
+import { BudgetCard } from '@/components/budget/budget-card';
+import { BudgetButton } from '@/components/budget/budget-screen';
 
 export default function HomeScreen() {
+  const { exit, error: accessError } = useLocalAccess();
+  const [endingAccess, setEndingAccess] = useState(false);
   const { budgets, loading, error, retry } = useSavedBudgets();
+  const { draft, status: draftStatus, error: draftError, discard, resume } = useBudgetDraft();
+  const [confirmDraftDiscard, setConfirmDraftDiscard] = useState(false);
+  const [draftActionError, setDraftActionError] = useState<string | null>(null);
   const { isWide, maxContentWidth, horizontalPadding } = useResponsiveLayout();
   return (
     <SafeAreaView style={styles.screen}>
@@ -21,13 +30,9 @@ export default function HomeScreen() {
         <View style={[styles.content, { maxWidth: maxContentWidth, paddingHorizontal: horizontalPadding }]}>
           <View style={styles.header}>
             <View style={styles.greeting}>
-              <Text accessibilityRole="header" style={styles.title}>Olá, Kettlem!</Text>
+              <Text accessibilityRole="header" style={styles.title}>Olá!</Text>
               <Text style={styles.subtitle}>Vamos construir grandes projetos hoje.</Text>
             </View>
-            <Pressable disabled accessibilityRole="button" accessibilityLabel="Notificações"
-              accessibilityState={{ disabled: true }} style={styles.notification}>
-              <SymbolView name={{ ios: 'bell', android: 'notifications', web: 'notifications' }} size={25} tintColor={Brand.dark} />
-            </Pressable>
           </View>
 
           <View style={[styles.dashboard, isWide && styles.dashboardWide]}>
@@ -35,10 +40,43 @@ export default function HomeScreen() {
               <Pressable accessibilityRole="button" onPress={() => router.push('/configuracoes/empresa')} style={styles.settings}>
                 <Text style={styles.link}>Dados da GessoLider / profissional</Text>
               </Pressable>
+              {!!accessError && <Text accessibilityRole="alert" style={styles.accessError}>{accessError}</Text>}
+              <Pressable accessibilityRole="button" disabled={endingAccess} onPress={async () => {
+                setEndingAccess(true);
+                try { await exit(); router.replace('/login'); } catch {}
+                finally { setEndingAccess(false); }
+              }} style={styles.settings}>
+                <Text style={styles.link}>{endingAccess ? 'Encerrando acesso…' : 'Encerrar acesso local'}</Text>
+              </Pressable>
 
               <View style={styles.grid}>
-                <ShortcutCard title="Novo Orçamento" icon={{ ios: 'doc.badge.plus', android: 'note_add', web: 'note_add' }} onPress={() => router.push('/orcamento/tipo-servico')} />
+                <ShortcutCard title="Novo Orçamento" icon={{ ios: 'doc.badge.plus', android: 'note_add', web: 'note_add' }} onPress={() => draft ? resume() : router.push('/orcamento/tipo-servico')} />
               </View>
+
+              {draftStatus === 'loading' ? null : draftStatus === 'error' ? <BudgetCard title="Rascunho indisponível">
+                <Text accessibilityRole="alert" style={styles.accessError}>{draftError}</Text>
+                {!!draftActionError && <Text accessibilityRole="alert" style={styles.accessError}>{draftActionError}</Text>}
+                {!confirmDraftDiscard ? <BudgetButton label="Descartar rascunho indisponível" onPress={() => { setDraftActionError(null); setConfirmDraftDiscard(true); }} /> : <View style={styles.confirmation}>
+                  <Text style={styles.subtitle}>O rascunho que não pôde ser carregado será removido. Os orçamentos do histórico serão preservados.</Text>
+                  <BudgetButton label="Confirmar descarte" onPress={async () => {
+                    try { await discard(); setConfirmDraftDiscard(false); }
+                    catch { setDraftActionError('Não foi possível remover o rascunho. Tente novamente.'); }
+                  }} />
+                  <BudgetButton label="Cancelar" onPress={() => setConfirmDraftDiscard(false)} />
+                </View>}
+              </BudgetCard> : draft && <BudgetCard title="Rascunho em andamento">
+                <Text style={styles.subtitle}>Continue o orçamento interrompido para evitar substituir os dados deste rascunho.</Text>
+                {!!draftActionError && <Text accessibilityRole="alert" style={styles.accessError}>{draftActionError}</Text>}
+                <BudgetButton label="Continuar rascunho" onPress={resume} />
+                {!confirmDraftDiscard ? <BudgetButton label="Descartar rascunho" onPress={() => { setDraftActionError(null); setConfirmDraftDiscard(true); }} /> : <View style={styles.confirmation}>
+                  <Text style={styles.subtitle}>O rascunho em andamento será removido deste dispositivo. Orçamentos já salvos não serão excluídos.</Text>
+                  <BudgetButton label="Confirmar descarte" onPress={async () => {
+                    try { await discard(); setConfirmDraftDiscard(false); }
+                    catch { setDraftActionError('Não foi possível descartar o rascunho. Tente novamente.'); }
+                  }} />
+                  <BudgetButton label="Cancelar" onPress={() => setConfirmDraftDiscard(false)} />
+                </View>}
+              </BudgetCard>}
 
               <View style={styles.banner}>
                 <View style={styles.blueprint} />
@@ -55,7 +93,7 @@ export default function HomeScreen() {
             </View>
             <BudgetHistoryList budgets={budgets} loading={loading} error={error} onRetry={retry} recentLimit={3}
               onOpen={(id) => router.push(savedBudgetDetailsRoute(id))}
-              onCreate={() => router.push('/orcamento/tipo-servico')} />
+              onCreate={() => draft ? resume() : router.push('/orcamento/tipo-servico')} />
           </View>
           </View>
         </View>
@@ -73,7 +111,6 @@ const styles = StyleSheet.create({
   greeting: { flex: 1, minWidth: 0, gap: 8 },
   title: { fontSize: 26, fontWeight: '700', color: Brand.dark },
   subtitle: { fontSize: 14, lineHeight: 21, color: '#60706A' },
-  notification: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#DFE8E3', borderRadius: 14 },
   settings: { minHeight: 48, justifyContent: 'center', padding: 14, borderWidth: 1, borderColor: '#C5CECA', borderRadius: 12 },
   dashboard: { gap: 24 },
   dashboardWide: { flexDirection: 'row', alignItems: 'flex-start' },
@@ -89,4 +126,6 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 19, fontWeight: '700', color: Brand.dark, flexShrink: 1 },
   seeAll: { minHeight: 44, justifyContent: 'center' },
   link: { fontSize: 13, fontWeight: '600', color: Brand.primary },
+  accessError: { color: '#A33232', fontSize: 13, lineHeight: 20 },
+  confirmation: { gap: 10 },
 });

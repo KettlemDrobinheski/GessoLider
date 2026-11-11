@@ -12,6 +12,7 @@ import { calculateCeilingPricing } from '@/domain/calculations/ceilingPricing';
 import { calculateWoodWallCladdingPricing } from '@/domain/calculations/woodWallCladding';
 import { formatBRL } from '@/utils/currency';
 import { formatBudgetHistoryDate, savedBudgetEditRoute, savedBudgetServiceLabels, savedBudgetStatusLabels } from '@/utils/budget-history';
+import { useBudgetClient } from '@/hooks/use-budget-client';
 
 const measure = (value: number) => `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
 const budgetStatuses: BudgetStatus[] = ['draft', 'sent', 'approved', 'rejected', 'completed'];
@@ -23,6 +24,7 @@ function pricingSummary(budget: SavedBudget) {
 }
 
 export default function SavedBudgetDetailsScreen() {
+  const { setClient } = useBudgetClient();
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const budgetId = typeof id === 'string' ? id : null;
   const [budget, setBudget] = useState<SavedBudget | null>(null);
@@ -61,9 +63,14 @@ export default function SavedBudgetDetailsScreen() {
     else router.replace('/orcamentos' as Href);
   }
 
-  function edit() {
+  async function edit() {
     if (!budget) return;
-    router.push(savedBudgetEditRoute(budget));
+    try {
+      await setClient(budget.client);
+      router.push(savedBudgetEditRoute(budget));
+    } catch {
+      setActionError('Não foi possível preparar os dados do cliente para edição. Tente novamente.');
+    }
   }
 
   async function updateStatus(status: BudgetStatus) {
@@ -88,6 +95,7 @@ export default function SavedBudgetDetailsScreen() {
     setActionError(null);
     setActionFeedback(null);
     try {
+      await setClient(budget.client);
       const copy = await savedBudgetsRepository.duplicate(budget.id);
       router.push(savedBudgetEditRoute(copy));
     } catch (cause) {

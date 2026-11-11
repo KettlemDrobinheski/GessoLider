@@ -13,6 +13,7 @@ import { ceilingProfileDirectionNotice } from '@/constants/budget-document';
 import type { CeilingBudgetInput, CeilingConfiguration, CeilingMeasurements } from '@/types/ceiling';
 import { parseCeilingBudgetInput, parseCeilingMeasurements } from '@/utils/ceiling';
 import { formatArea } from '@/utils/measurements';
+import { useBudgetDraft } from '@/hooks/use-budget-draft';
 
 export default function CeilingConfigurationScreen() {
   const { clientParams } = useBudgetClient();
@@ -44,8 +45,17 @@ function CeilingConfigurationForm({ measurements, initialConfiguration, onBack, 
   measurements: CeilingMeasurements; initialConfiguration?: CeilingConfiguration; onBack: () => void;
   onContinue: (budget: CeilingBudgetInput) => void;
 }) {
-  const [spacingCm, setSpacingCm] = useState<CeilingConfiguration['spacingCm'] | null>(initialConfiguration?.spacingCm ?? null);
-  const [wastePercent, setWastePercent] = useState<CeilingConfiguration['wastePercent'] | null>(initialConfiguration?.wastePercent ?? null);
+  const { draft, saveFields } = useBudgetDraft();
+  const recovered = !initialConfiguration && draft?.service === 'ceiling'
+    ? draft.formData.ceilingConfiguration as CeilingConfiguration | undefined
+    : undefined;
+  const [spacingCm, setSpacingCm] = useState<CeilingConfiguration['spacingCm'] | null>(recovered?.spacingCm ?? initialConfiguration?.spacingCm ?? null);
+  const [wastePercent, setWastePercent] = useState<CeilingConfiguration['wastePercent'] | null>(recovered?.wastePercent ?? initialConfiguration?.wastePercent ?? null);
+  function updateConfiguration(nextSpacing: CeilingConfiguration['spacingCm'] | null, nextWaste: CeilingConfiguration['wastePercent'] | null) {
+    setSpacingCm(nextSpacing);
+    setWastePercent(nextWaste);
+    void saveFields({ ceilingConfiguration: { spacingCm: nextSpacing, wastePercent: nextWaste } }, 'ceiling').catch(() => undefined);
+  }
   function next() {
     if (spacingCm === null || wastePercent === null) return;
     onContinue({ measurements, configuration: { spacingCm, wastePercent } });
@@ -55,12 +65,12 @@ function CeilingConfigurationForm({ measurements, initialConfiguration, onBack, 
       footer={<BudgetButton label="Continuar" disabled={spacingCm === null || wastePercent === null} onPress={next} />}>
       <ConfigurationSection title="Espaçamento da estrutura">
         {ceilingSpacingOptions.map((option) => <ConfigurationOption key={option.value} label={option.label}
-          selected={spacingCm === option.value} onSelect={() => setSpacingCm(option.value)} />)}
+          selected={spacingCm === option.value} onSelect={() => updateConfiguration(option.value, wastePercent)} />)}
       </ConfigurationSection>
       <Text style={styles.note}>{ceilingProfileDirectionNotice}</Text>
       <ConfigurationSection title="Percentual de perda">
         {ceilingWasteOptions.map((option) => <ConfigurationOption key={option.value} label={option.label}
-          selected={wastePercent === option.value} onSelect={() => setWastePercent(option.value)} />)}
+          selected={wastePercent === option.value} onSelect={() => updateConfiguration(spacingCm, option.value)} />)}
       </ConfigurationSection>
       <BudgetCard title="Configuração selecionada">
         <BudgetLine label="Área do forro" value={formatArea(measurements.length * measurements.width)} />

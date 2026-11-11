@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/brand';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { BudgetSteps } from './budget-steps';
+import { DraftSaveStatus } from '@/hooks/use-budget-draft';
 
 type Props = PropsWithChildren<{
   title: string; subtitle?: string; activeStep?: 2 | 3 | 4 | 'client'; headerTitle?: string; onBack: () => void; footer?: ReactNode; keyboard?: boolean;
@@ -31,6 +32,7 @@ export function BudgetScreen({ title, subtitle, activeStep, headerTitle = 'Novo 
               <Text accessibilityRole="header" style={styles.title}>{title}</Text>
               {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
             </View>
+            {activeStep !== undefined && <DraftSaveStatus />}
             {children}
           </View>
         </ScrollView>

@@ -57,7 +57,6 @@ export function savedBudgetEditRoute(budget: SavedBudget): Href {
     pathname: '/orcamento/medidas',
     params: {
       servico: budget.service,
-      cliente: JSON.stringify(budget.client),
       orcamento: JSON.stringify(budget.budget),
       valores: JSON.stringify(budget.pricing),
       orcamentoSalvoId: budget.id,

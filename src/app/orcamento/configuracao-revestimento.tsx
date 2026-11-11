@@ -10,6 +10,7 @@ import { wasteOptions } from '@/constants/wall-configuration';
 import type { WoodWallCladdingBudgetInput, WoodWallCladdingConfiguration, WoodWallCladdingMeasurements } from '@/types/wood-wall-cladding';
 import { parseWoodWallCladdingBudgetInput, parseWoodWallCladdingMeasurements } from '@/utils/wood-wall-cladding';
 import { formatArea } from '@/utils/measurements';
+import { useBudgetDraft } from '@/hooks/use-budget-draft';
 
 export default function WoodWallCladdingConfigurationScreen() {
   const { clientParams } = useBudgetClient();
@@ -41,7 +42,15 @@ function WoodWallCladdingConfigurationForm({ measurements, initialConfiguration,
   measurements: WoodWallCladdingMeasurements; initialConfiguration?: WoodWallCladdingConfiguration; onBack: () => void;
   onContinue: (budget: WoodWallCladdingBudgetInput) => void;
 }) {
-  const [wastePercent, setWastePercent] = useState<WoodWallCladdingConfiguration['wastePercent'] | null>(initialConfiguration?.wastePercent ?? null);
+  const { draft, saveFields } = useBudgetDraft();
+  const recovered = !initialConfiguration && draft?.service === 'lining'
+    ? draft.formData.liningConfiguration as WoodWallCladdingConfiguration | undefined
+    : undefined;
+  const [wastePercent, setWastePercent] = useState<WoodWallCladdingConfiguration['wastePercent'] | null>(recovered?.wastePercent ?? initialConfiguration?.wastePercent ?? null);
+  function updateWastePercent(value: WoodWallCladdingConfiguration['wastePercent']) {
+    setWastePercent(value);
+    void saveFields({ liningConfiguration: { wastePercent: value } }, 'lining').catch(() => undefined);
+  }
   function next() {
     if (wastePercent === null) return;
     onContinue({ measurements, configuration: { wastePercent } });
@@ -51,7 +60,7 @@ function WoodWallCladdingConfigurationForm({ measurements, initialConfiguration,
       footer={<BudgetButton label="Continuar" disabled={wastePercent === null} onPress={next} />}>
       <ConfigurationSection title="Percentual de perda">
         {wasteOptions.map((option) => <ConfigurationOption key={option.value} label={option.label}
-          selected={wastePercent === option.value} onSelect={() => setWastePercent(option.value)} />)}
+          selected={wastePercent === option.value} onSelect={() => updateWastePercent(option.value)} />)}
       </ConfigurationSection>
       <BudgetCard title="Configuração selecionada">
         <BudgetLine label="Área do revestimento" value={formatArea(measurements.width * measurements.height)} />

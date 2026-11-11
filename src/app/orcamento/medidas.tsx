@@ -22,6 +22,7 @@ import type { MeasurementDraft, OpeningDraft } from '@/types/measurements';
 import type { WallBudgetInput, WallMeasurements } from '@/types/wall-configuration';
 import { dimensionFields, dimensionLabels, validateMeasurements } from '@/utils/measurements';
 import { parseWallBudgetInput } from '@/utils/wall-configuration';
+import { DraftSaveStatus, useBudgetDraft } from '@/hooks/use-budget-draft';
 
 export default function MeasurementsScreen() {
   const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
@@ -55,18 +56,29 @@ export default function MeasurementsScreen() {
 function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, savedValues, savedId }: { service: ServiceOption; savedBudget: WallBudgetInput | null; savedCeiling: CeilingBudgetInput | null; savedCladding: WoodWallCladdingBudgetInput | null; savedValues?: string; savedId?: string }) {
   const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
   const { clientParams } = useBudgetClient();
+  const { draft, saveFields } = useBudgetDraft();
+  const draftMeasurements = !savedId && draft?.service === service.id
+    ? draft.formData.measurements as { dimensions?: MeasurementDraft; hasOpenings?: boolean; openings?: OpeningDraft[] } | undefined
+    : undefined;
   const savedMeasurements = savedBudget?.measurements;
   const [dimensions, setDimensions] = useState<MeasurementDraft>({
-    length: savedMeasurements ? String(savedMeasurements.length) : savedCeiling ? String(savedCeiling.measurements.length) : savedCladding ? String(savedCladding.measurements.width) : '',
-    height: savedMeasurements ? String(savedMeasurements.height) : savedCladding ? String(savedCladding.measurements.height) : '', width: savedCeiling ? String(savedCeiling.measurements.width) : '', depth: '',
+    ...(draftMeasurements?.dimensions ?? {
+      length: savedMeasurements ? String(savedMeasurements.length) : savedCeiling ? String(savedCeiling.measurements.length) : savedCladding ? String(savedCladding.measurements.width) : '',
+      height: savedMeasurements ? String(savedMeasurements.height) : savedCladding ? String(savedCladding.measurements.height) : '', width: savedCeiling ? String(savedCeiling.measurements.width) : '', depth: '',
+    }),
   });
-  const [hasOpenings, setHasOpenings] = useState((savedMeasurements?.openings.length ?? 0) > 0);
-  const [openings, setOpenings] = useState<OpeningDraft[]>(savedMeasurements?.openings.map((opening) => ({
+  const [hasOpenings, setHasOpenings] = useState(draftMeasurements?.hasOpenings ?? (savedMeasurements?.openings.length ?? 0) > 0);
+  const [openings, setOpenings] = useState<OpeningDraft[]>(draftMeasurements?.openings ?? savedMeasurements?.openings.map((opening) => ({
     ...opening, width: String(opening.width), height: String(opening.height), quantity: String(opening.quantity),
   })) ?? []);
   const nextOpeningId = useRef(1);
   const validation = validateMeasurements(service.id, dimensions, hasOpenings, openings);
   const canContinue = validation.value !== null;
+
+  function persistMeasurements(nextDimensions: MeasurementDraft, nextHasOpenings: boolean, nextOpenings: OpeningDraft[]) {
+    const serviceType = service.id === 'wall' || service.id === 'ceiling' || service.id === 'lining' ? service.id : null;
+    void saveFields({ measurements: { dimensions: nextDimensions, hasOpenings: nextHasOpenings, openings: nextOpenings } }, serviceType).catch(() => undefined);
+  }
 
   function addOpening() {
     let id: string;
@@ -74,12 +86,16 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
     const opening: OpeningDraft = {
       id, type: 'door', width: '', height: '', quantity: '1',
     };
-    setOpenings((current) => [...current, opening]);
+    const next = [...openings, opening];
+    setOpenings(next);
+    persistMeasurements(dimensions, true, next);
   }
 
   function changeHasOpenings(value: boolean) {
     setHasOpenings(value);
-    if (value && openings.length === 0) addOpening();
+    const nextOpenings = value && openings.length === 0 ? [{ id: `opening-${nextOpeningId.current++}`, type: 'door' as const, width: '', height: '', quantity: '1' }] : openings;
+    if (nextOpenings !== openings) setOpenings(nextOpenings);
+    persistMeasurements(dimensions, value, nextOpenings);
   }
 
   function handleBack() {
@@ -146,11 +162,16 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
               <Text accessibilityRole="header" style={styles.title}>Informe as medidas</Text>
               <Text style={styles.subtitle}>Adicione as dimensões do serviço para calcular os materiais.</Text>
             </View>
+            <DraftSaveStatus />
 
             <View style={styles.dimensionRow}>
               {dimensionFields[service.id].map((key) => (
                 <MeasurementField key={key} label={service.id === 'lining' && key === 'length' ? 'Largura' : dimensionLabels[key]} value={dimensions[key]} error={validation.fields[key]}
-                  onChangeText={(value) => setDimensions((current) => ({ ...current, [key]: value }))} />
+                  onChangeText={(value) => {
+                    const next = { ...dimensions, [key]: value };
+                    setDimensions(next);
+                    persistMeasurements(next, hasOpenings, openings);
+                  }} />
               ))}
             </View>
             {service.id === 'details' && <Text style={styles.subtitle}>Informe as dimensões básicas do projeto. Nichos e detalhes precisam de configuração específica para o cálculo de materiais.</Text>}
@@ -172,8 +193,16 @@ function MeasurementsForm({ service, savedBudget, savedCeiling, savedCladding, s
                     <Text accessibilityRole="header" style={styles.sectionTitle}>Aberturas</Text>
                     {openings.map((opening, index) => (
                       <OpeningCard key={opening.id} opening={opening} index={index} errors={validation.openings[opening.id] ?? {}}
-                        onChange={(update) => setOpenings((current) => current.map((item) => item.id === opening.id ? { ...item, ...update } : item))}
-                        onRemove={() => setOpenings((current) => current.filter((item) => item.id !== opening.id))} />
+                        onChange={(update) => {
+                          const next = openings.map((item) => item.id === opening.id ? { ...item, ...update } : item);
+                          setOpenings(next);
+                          persistMeasurements(dimensions, hasOpenings, next);
+                        }}
+                        onRemove={() => {
+                          const next = openings.filter((item) => item.id !== opening.id);
+                          setOpenings(next);
+                          persistMeasurements(dimensions, hasOpenings, next);
+                        }} />
                     ))}
                     {!!validation.openingsMessage && <Text style={styles.error}>{validation.openingsMessage}</Text>}
                     <Pressable accessibilityRole="button" onPress={addOpening} style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}>

@@ -5,8 +5,10 @@ import type { NewSavedBudget } from '@/types/saved-budget';
 import { savedBudgetsRepository } from '@/services/saved-budgets';
 import { saveBudgetRecord } from '@/utils/budget-history';
 import { BudgetButton } from './budget-screen';
+import { useBudgetDraft } from '@/hooks/use-budget-draft';
 
 export function SaveBudgetAction({ input, savedId, unavailableMessage }: { input: NewSavedBudget | null; savedId?: string; unavailableMessage?: string }) {
+  const { complete } = useBudgetDraft();
   const [currentId, setCurrentId] = useState(savedId);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -19,6 +21,7 @@ export function SaveBudgetAction({ input, savedId, unavailableMessage }: { input
     setError(null);
     try {
       const record = await saveBudgetRecord(savedBudgetsRepository, input, currentId);
+      if (!savedId) await complete();
       setCurrentId(record.id);
       router.setParams({ orcamentoSalvoId: record.id });
       setFeedback('Orçamento salvo no histórico.');

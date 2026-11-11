@@ -10,9 +10,12 @@ import { ServiceCard } from '@/components/budget/service-card';
 import { Brand } from '@/constants/brand';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { serviceOptions, type ServiceType } from '@/constants/services';
+import { DraftSaveStatus, useBudgetDraft } from '@/hooks/use-budget-draft';
 
 export default function ServiceTypeScreen() {
-  const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
+  const { draft, saveFields } = useBudgetDraft();
+  const initialService = draft?.formData.service;
+  const [selectedService, setSelectedService] = useState<ServiceType | null>(serviceOptions.some(({ id }) => id === initialService) ? initialService as ServiceType : null);
   const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
 
   function handleBack() {
@@ -47,10 +50,18 @@ export default function ServiceTypeScreen() {
             <Text accessibilityRole="header" style={styles.title}>Qual serviço será realizado?</Text>
             <Text style={styles.subtitle}>Selecione uma opção para continuar.</Text>
           </View>
+          <DraftSaveStatus />
           <View accessibilityRole="radiogroup" accessibilityLabel="Tipo de serviço" style={styles.services}>
             {serviceOptions.map((service) => (
               <ServiceCard key={service.id} service={service}
-                selected={selectedService === service.id} onSelect={setSelectedService} />
+                selected={selectedService === service.id} onSelect={(id) => {
+                  const changed = selectedService !== null && selectedService !== id;
+                  setSelectedService(id);
+                  void saveFields({
+                    service: id,
+                    ...(changed ? { measurements: null, wallConfiguration: null, ceilingConfiguration: null, liningConfiguration: null, pricingDraft: null } : {}),
+                  }, id === 'wall' || id === 'ceiling' || id === 'lining' ? id : null).catch(() => undefined);
+                }} />
             ))}
           </View>
         </View>

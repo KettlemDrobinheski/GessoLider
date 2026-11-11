@@ -96,7 +96,7 @@ test('opens each saved service with validated inputs and persists edits under th
     const parsedPricing = source.service === 'wall' ? parseWallPricingInput(route.params.valores) : parseBudgetPricingInput(route.params.valores);
     assert.deepEqual(parsedBudget, saved.budget);
     assert.deepEqual(parsedPricing, saved.pricing);
-    assert.deepEqual(JSON.parse(route.params.cliente), saved.client);
+    assert.equal('cliente' in route.params, false);
 
     const beforeCancel = await repository.getById(saved.id);
     assert.deepEqual(beforeCancel, saved);

@@ -14,28 +14,43 @@ const fields: { key: keyof ClientData; label: string; keyboard?: 'phone-pad' | '
   { key: 'notes', label: 'Observações do cliente / obra', multiline: true },
 ];
 
-export function ClientForm({ initialClient, onBack, onContinue }: {
-  initialClient: ClientData | null; onBack: () => void; onContinue: (client: ClientData) => void;
+export function ClientForm({ initialClient, onBack, onContinue, onDraftChange }: {
+  initialClient: ClientData | null; onBack: () => void; onContinue: (client: ClientData) => void | Promise<void>;
+  onDraftChange?: (client: ClientData) => void;
 }) {
   const [draft, setDraft] = useState<ClientData>(() => ({
     ...(initialClient ?? emptyClient), phone: formatPhone(initialClient?.phone ?? ''), cep: formatCep(initialClient?.cep ?? ''),
   }));
   const [touched, setTouched] = useState<Partial<Record<keyof ClientData, boolean>>>({});
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const validation = validateClient(draft);
-  function next() { if (validation.value) onContinue(validation.value); }
+  async function next() {
+    if (!validation.value || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try { await onContinue(validation.value); }
+    catch { setSaveError('Não foi possível salvar os dados do cliente. Tente novamente.'); }
+    finally { setSaving(false); }
+  }
   return (
     <BudgetScreen title="Dados do Cliente" subtitle="Informe o cliente e o endereço da obra. Apenas o nome é obrigatório." activeStep="client" onBack={onBack} keyboard
-      footer={<BudgetButton label="Continuar" disabled={!validation.value} onPress={next} />}>
+      footer={<BudgetButton label={saving ? 'Salvando…' : 'Continuar'} disabled={!validation.value || saving} onPress={() => { void next(); }} />}>
       <BudgetCard title="Cliente e obra">
+        {!!saveError && <Text accessibilityRole="alert" style={styles.error}>{saveError}</Text>}
         {fields.map(({ key, label, keyboard, multiline }) => {
           const error = touched[key] || draft[key].length > 0 ? validation.errors[key] : undefined;
           return <View key={key} style={styles.field}>
             <Text style={styles.label}>{label}</Text>
             <TextInput accessibilityLabel={label} aria-invalid={!!error} aria-describedby={error ? `client-${key}-error` : undefined}
-              value={draft[key]} keyboardType={keyboard} multiline={multiline}
+              value={draft[key]} editable={!saving} keyboardType={keyboard} multiline={multiline}
               autoCapitalize={key === 'state' ? 'characters' : key === 'notes' ? 'sentences' : 'words'}
               onBlur={() => setTouched((current) => ({ ...current, [key]: true }))}
-              onChangeText={(text) => setDraft((current) => ({ ...current, [key]: key === 'phone' ? formatPhone(text) : key === 'cep' ? formatCep(text) : text }))}
+              onChangeText={(text) => {
+                const next = { ...draft, [key]: key === 'phone' ? formatPhone(text) : key === 'cep' ? formatCep(text) : text };
+                setDraft(next);
+                onDraftChange?.(next);
+              }}
               style={[styles.input, multiline && styles.notes, !!error && styles.invalid]} textAlignVertical={multiline ? 'top' : 'center'} />
             {!!error && <Text nativeID={`client-${key}-error`} style={styles.error}>{error}</Text>}
           </View>;

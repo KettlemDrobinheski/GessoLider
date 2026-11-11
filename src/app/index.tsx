@@ -1,9 +1,10 @@
 ﻿import { BrandLogo } from "@/components/brand-logo";
 import { Brand } from "@/constants/brand";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalAccess } from "@/hooks/use-local-access";
 
 const benefits = [
   "Calcule materiais",
@@ -13,6 +14,7 @@ const benefits = [
 ];
 
 export default function SplashScreen() {
+  const { active, ready } = useLocalAccess();
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="light" />
@@ -35,14 +37,11 @@ export default function SplashScreen() {
             </View>
           </View>
           <View style={styles.footer}>
-            <Link href="/login" asChild>
-              <Pressable
-                accessibilityRole="button"
-                style={styles.button}
-              >
-                <Text style={styles.buttonText}>Começar</Text>
-              </Pressable>
-            </Link>
+            <Pressable accessibilityRole="button" disabled={!ready}
+              onPress={() => router.replace(active ? '/home' : '/login')}
+              style={[styles.button, !ready && styles.disabledButton]}>
+              <Text style={styles.buttonText}>{ready ? 'Começar' : 'Carregando…'}</Text>
+            </Pressable>
             <Text style={styles.footerText}>
               Mais praticidade do{"\n"}planejamento à entrega.
             </Text>
@@ -99,6 +98,7 @@ const styles = StyleSheet.create({
     borderColor: Brand.accent,
   },
   buttonText: { color: Brand.white, fontSize: 18, fontWeight: "700", textAlign: "center" },
+  disabledButton: { opacity: 0.65 },
   footerText: {
     color: Brand.white,
     textAlign: "center",
