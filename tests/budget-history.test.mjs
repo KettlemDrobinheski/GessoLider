@@ -44,7 +44,7 @@ test('saves all three services and later updates preserve the generated ID', asy
   });
   const records = [];
   for (const source of sources()) {
-    const input = buildSavedBudgetInput(source.service, source.budget, source.pricing, source.company, source.client);
+    const input = buildSavedBudgetInput(source.service, source.budget, source.pricing, source.company, source.client, 'Descrição personalizada.');
     records.push(await saveBudgetRecord(repository, input));
   }
   assert.deepEqual(records.map((record) => record.service), ['wall', 'ceiling', 'lining']);
@@ -85,12 +85,13 @@ test('opens each saved service with validated inputs and persists edits under th
     now: () => `2026-10-${String(++sequence).padStart(2, '0')}T10:00:00.000Z`,
   });
   for (const source of sources()) {
-    const input = buildSavedBudgetInput(source.service, source.budget, source.pricing, source.company, source.client);
+    const input = buildSavedBudgetInput(source.service, source.budget, source.pricing, source.company, source.client, 'Descrição personalizada.');
     const saved = await repository.create(input);
     const route = savedBudgetEditRoute(saved);
     assert.equal(route.pathname, '/orcamento/medidas');
     assert.equal(route.params.orcamentoSalvoId, saved.id);
     assert.equal(route.params.servico, saved.service);
+    assert.equal(route.params.descricaoServico, 'Descrição personalizada.');
     const parsedBudget = source.service === 'wall' ? parseWallBudgetInput(route.params.orcamento)
       : source.service === 'ceiling' ? parseCeilingBudgetInput(route.params.orcamento)
         : parseWoodWallCladdingBudgetInput(route.params.orcamento);
@@ -107,12 +108,13 @@ test('opens each saved service with validated inputs and persists edits under th
     editedBudget.configuration.wastePercent = 10;
     const editedClient = { ...saved.client, name: 'Cliente atualizado' };
     const editedInput = buildSavedBudgetInput(saved.service, editedBudget,
-      { ...parsedPricing, notes: 'Editado' }, { ...saved.company, companyName: 'Perfil atual diferente' }, editedClient);
+      { ...parsedPricing, notes: 'Editado' }, { ...saved.company, companyName: 'Perfil atual diferente' }, editedClient, 'Descrição editada.');
     const edited = await saveBudgetRecord(repository, editedInput, route.params.orcamentoSalvoId).catch((cause) => {
       throw new Error(`${saved.service} edit failed: ${cause.message}`);
     });
     assert.equal(edited.id, saved.id);
     assert.equal(edited.pricing.notes, 'Editado');
+    assert.equal(edited.serviceDescription, 'Descrição editada.');
     assert.deepEqual(edited.budget, editedBudget);
     assert.deepEqual(edited.client, editedClient);
     assert.deepEqual(edited.company, saved.company);
@@ -121,6 +123,7 @@ test('opens each saved service with validated inputs and persists edits under th
     assert.equal(document.client.name, editedClient.name);
     assert.equal(document.pricing.notes, 'Editado');
     assert.equal(document.company.companyName, saved.company.companyName);
+    assert.equal(document.serviceDescription, 'Descrição editada.');
 
     const reloadedRepository = createSavedBudgetsRepository(storage);
     const reloaded = await reloadedRepository.getById(saved.id);

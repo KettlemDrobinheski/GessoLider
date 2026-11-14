@@ -7,7 +7,7 @@ import { saveBudgetRecord } from '@/utils/budget-history';
 import { BudgetButton } from './budget-screen';
 import { useBudgetDraft } from '@/hooks/use-budget-draft';
 
-export function SaveBudgetAction({ input, savedId, unavailableMessage }: { input: NewSavedBudget | null; savedId?: string; unavailableMessage?: string }) {
+export function SaveBudgetAction({ input, savedId, unavailableMessage, serviceDescription, serviceDescriptionCustomized }: { input: NewSavedBudget | null; savedId?: string; unavailableMessage?: string; serviceDescription: string; serviceDescriptionCustomized: boolean }) {
   const { complete } = useBudgetDraft();
   const [currentId, setCurrentId] = useState(savedId);
   const [saving, setSaving] = useState(false);
@@ -20,7 +20,7 @@ export function SaveBudgetAction({ input, savedId, unavailableMessage }: { input
     setFeedback(null);
     setError(null);
     try {
-      const record = await saveBudgetRecord(savedBudgetsRepository, input, currentId);
+      const record = await saveBudgetRecord(savedBudgetsRepository, { ...input, serviceDescription, serviceDescriptionCustomized }, currentId);
       if (!savedId) await complete();
       setCurrentId(record.id);
       router.setParams({ orcamentoSalvoId: record.id });

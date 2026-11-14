@@ -29,10 +29,22 @@ test('rebuilds documents for all saved services from historical company and clie
     assert.equal(doc.pricing.materialsTotal + doc.pricing.laborTotal, doc.pricing.total);
     assert.match(doc.pricing.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), /^R\$/);
     const html = buildBudgetPdfHtml(doc);
-    assert.equal(html.split('Valor dos materiais').length - 1, 1);
-    assert.equal(html.split('Mão de obra').length - 1, 1);
-    assert.equal(html.split('TOTAL').length - 1, 1);
+    assert.ok(html.includes('Descrição dos Serviços Contratados'));
+    assert.ok(html.includes(doc.serviceDescription));
+    assert.equal(html.split('Valor dos materiais').length - 1, 0);
+    assert.equal(html.split('Mão de obra').length - 1, 0);
+    assert.equal(html.split('TOTAL GERAL').length - 1, 1);
+    assert.ok(html.includes(doc.pricing.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })));
+    for (const material of doc.materials) assert.ok(!html.includes(material.label));
   }
+});
+
+test('legacy saved budgets without a description remain readable and produce a public fallback', () => {
+  const record = records()[0];
+  delete record.serviceDescription;
+  const document = buildSavedBudgetDocumentData(record);
+  assert.match(document.serviceDescription, /Execução de parede de drywall/);
+  assert.ok(buildBudgetPdfHtml(document).includes(document.serviceDescription));
 });
 
 test('wall PDF includes each door and window quantity and dimensions once', () => {

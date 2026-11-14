@@ -29,12 +29,14 @@ test('creates one persistent draft, omits client data from navigation params, an
   const storage = memoryStorage();
   const firstSession = makeRepository(storage);
   const clientDraft = { name: 'Cliente', phone: '', cep: '', street: '', number: '', neighborhood: '', city: '', state: '', complement: '', notes: '' };
-  const draft = await firstSession.saveDraft({ route: '/orcamento/cliente', params: { servico: 'wall', cliente: '{"name":"private"}' }, service: 'wall', formData: { clientDraft } });
+  const draft = await firstSession.saveDraft({ route: '/orcamento/cliente', params: { servico: 'wall', cliente: '{"name":"private"}' }, service: 'wall', formData: { clientDraft, serviceDescription: 'Parede personalizada.', serviceDescriptionCustomized: true } });
   const reopened = createSavedBudgetsRepository(storage);
   assert.equal(await reopened.getDraft().then((value) => value.id), draft.id);
   assert.equal((await reopened.getDraft()).route, '/orcamento/cliente');
   assert.equal('cliente' in (await reopened.getDraft()).params, false);
   assert.deepEqual((await reopened.getDraft()).formData.clientDraft, clientDraft);
+  assert.equal((await reopened.getDraft()).formData.serviceDescription, 'Parede personalizada.');
+  assert.equal((await reopened.getDraft()).formData.serviceDescriptionCustomized, true);
 });
 
 test('autosave updates the same draft and merges data from multiple form steps', async () => {

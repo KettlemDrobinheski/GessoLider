@@ -17,6 +17,8 @@ type SavedBudgetBase = {
   company: CompanyProfile;
   client: ClientData;
   pricing: BudgetPricingInput;
+  serviceDescription?: string;
+  serviceDescriptionCustomized?: boolean;
 };
 
 export type SavedBudget = SavedBudgetBase & (
@@ -29,4 +31,4 @@ export type NewSavedBudget = SavedBudget extends infer T
   ? T extends SavedBudget ? Omit<T, 'schemaVersion' | 'id' | 'createdAt' | 'updatedAt' | 'status'> & { status?: BudgetStatus } : never
   : never;
 
-export type SavedBudgetUpdate = Partial<Pick<SavedBudget, 'status' | 'company' | 'client' | 'pricing' | 'budget'>>;
+export type SavedBudgetUpdate = Partial<Pick<SavedBudget, 'status' | 'company' | 'client' | 'pricing' | 'budget' | 'serviceDescription' | 'serviceDescriptionCustomized'>>;

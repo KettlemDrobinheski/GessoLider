@@ -1,9 +1,8 @@
 import type { BudgetDocumentData, DocumentRow } from '../types/budget-document';
-import { assertBudgetDocumentData, budgetPdfFilename, formatIssueDate } from '../utils/budget-document';
+import { assertBudgetDocumentData, budgetPdfFilename, formatIssueDate, toCustomerBudgetDocument } from '../utils/budget-document';
 import { formatClientAddress, formatPhone } from '../utils/client';
 import { formatCompanySummary } from '../utils/company-profile';
 import { formatBRL } from '../utils/currency';
-import { materialEstimateNotice } from '../constants/budget-document';
 
 export function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -11,10 +10,11 @@ export function escapeHtml(value: string): string {
 
 export function buildBudgetPdfHtml(data: BudgetDocumentData, logoDataUri?: string | null): string {
   assertBudgetDocumentData(data);
+  const customerDocument = toCustomerBudgetDocument(data);
   const e = escapeHtml;
-  const companyLines = formatCompanySummary({ ...data.company, commercialNote: '' });
-  const clientLines = [data.client.name, data.client.phone ? formatPhone(data.client.phone) : '', ...formatClientAddress(data.client),
-    data.client.complement ? `Complemento: ${data.client.complement}` : '', data.client.notes ? `Observações: ${data.client.notes}` : ''].filter(Boolean);
+  const companyLines = formatCompanySummary({ ...customerDocument.company, commercialNote: '' });
+  const clientLines = [customerDocument.client.name, customerDocument.client.phone ? formatPhone(customerDocument.client.phone) : '', ...formatClientAddress(customerDocument.client),
+    customerDocument.client.complement ? `Complemento: ${customerDocument.client.complement}` : '', customerDocument.client.notes ? `Observações: ${customerDocument.client.notes}` : ''].filter(Boolean);
   const rows = (items: DocumentRow[]) => items.map((item) => `<tr><td>${e(item.label)}</td><td class="value">${e(item.value)}</td></tr>`).join('');
   const lines = (items: string[]) => items.map((line) => `<p>${e(line)}</p>`).join('');
   const logo = logoDataUri && /^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(logoDataUri)
@@ -50,16 +50,14 @@ th { background: #edf4ef; font-weight: 600; }
 <header>${logo}<h1>${e(companyLines[0])}</h1>${lines(companyLines.slice(1))}</header>
 <div class="identity"><strong>ORÇAMENTO</strong><span class="date">Emissão: ${e(formatIssueDate(data.issueDate))}</span></div>
 <section><h2>Cliente</h2>${lines(clientLines)}</section>
-<section><h2>Serviço</h2><p class="service">${e(data.serviceName)}</p>
-<table><tbody>${rows(data.measurements)}${rows(data.configuration)}</tbody></table></section>
-<section><h2>Materiais estimados</h2><table><thead><tr><th>Material</th><th class="value">Quantidade</th></tr></thead><tbody>${rows(data.materials)}</tbody></table></section>
+<section><h2>Serviço</h2><p class="service">${e(customerDocument.serviceName)}</p>
+<h2>Descrição dos Serviços Contratados</h2><p>${e(customerDocument.serviceDescription)}</p>
+<table><tbody>${rows(customerDocument.measurements)}</tbody></table>
+<p class="service">Valor do serviço: ${e(formatBRL(customerDocument.serviceValue))}</p></section>
 <section class="totals"><h2>Valores</h2><table><tbody>
-<tr><td>Valor dos materiais</td><td class="value">${e(formatBRL(data.pricing.materialsTotal))}</td></tr>
-<tr><td>Mão de obra</td><td class="value">${e(formatBRL(data.pricing.laborTotal))}</td></tr>
-<tr class="total"><td>TOTAL</td><td class="value">${e(formatBRL(data.pricing.total))}</td></tr>
+<tr class="total"><td>TOTAL GERAL</td><td class="value">${e(formatBRL(customerDocument.total))}</td></tr>
 </tbody></table></section>
-${data.notes ? `<section><h2>Observações do orçamento</h2><p>${e(data.notes)}</p></section>` : ''}
-${data.company.commercialNote ? `<section><h2>Observação comercial</h2><p>${e(data.company.commercialNote)}</p></section>` : ''}
-<p class="notice">${e(materialEstimateNotice)}</p>
+${customerDocument.notes ? `<section><h2>Observações do orçamento</h2><p>${e(customerDocument.notes)}</p></section>` : ''}
+${customerDocument.company.commercialNote ? `<section><h2>Observação comercial</h2><p>${e(customerDocument.company.commercialNote)}</p></section>` : ''}
 </body></html>`;
 }

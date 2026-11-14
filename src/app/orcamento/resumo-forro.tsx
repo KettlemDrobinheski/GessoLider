@@ -1,6 +1,6 @@
 import { BudgetDocumentPreview } from '@/components/budget/budget-document-preview';
 import { CompanySummary } from '@/components/budget/company-summary';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ClientSummary } from '@/components/budget/client-summary';
 import { useBudgetClient } from '@/hooks/use-budget-client';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -18,11 +18,14 @@ import { Brand } from '@/constants/brand';
 import { useCompanyProfile } from '@/hooks/use-company-profile';
 import { buildSavedBudgetInput } from '@/utils/budget-history';
 import { SaveBudgetAction } from '@/components/budget/save-budget-action';
+import { ServiceDescriptionEditor } from '@/components/budget/service-description-editor';
 
 export default function CeilingSummaryScreen() {
   const { profile, loading: companyLoading, loadError: companyError } = useCompanyProfile();
   const { client, clientParams } = useBudgetClient();
   const { orcamento, valores, orcamentoSalvoId } = useLocalSearchParams<{ orcamento?: string | string[]; valores?: string | string[]; orcamentoSalvoId?: string | string[] }>();
+  const [serviceDescription, setServiceDescription] = useState('');
+  const [serviceDescriptionCustomized, setServiceDescriptionCustomized] = useState(false);
   const budget = useMemo(() => parseCeilingBudgetInput(orcamento), [orcamento]);
   const values = parseBudgetPricingInput(valores);
   const materials = useMemo(() => budget ? calculateCeiling({ ...budget.measurements, ...budget.configuration }) : null, [budget]);
@@ -45,6 +48,7 @@ export default function CeilingSummaryScreen() {
       <CompanySummary />
       <ClientSummary client={client} onEdit={editClient} />
       <BudgetCard title="Serviço"><BudgetLine label="Tipo" value="Forro de drywall" /></BudgetCard>
+      <ServiceDescriptionEditor service="ceiling" client={client} dimensions={{ length: budget.measurements.length, width: budget.measurements.width }} savedBudgetId={typeof orcamentoSalvoId === 'string' ? orcamentoSalvoId : undefined} value={serviceDescription} onChange={setServiceDescription} onCustomizedChange={setServiceDescriptionCustomized} />
       <BudgetCard title="Medidas">
         <BudgetLine label="Comprimento" value={measure(budget.measurements.length)} />
         <BudgetLine label="Largura" value={measure(budget.measurements.width)} />
@@ -59,10 +63,10 @@ export default function CeilingSummaryScreen() {
       {!!pricing.notes.trim() && <BudgetCard title="Observações"><Text style={styles.text}>{pricing.notes}</Text></BudgetCard>}
       <BudgetButton label="Editar medidas/configuração" onPress={editMeasurements} />
       <BudgetButton label="Editar valores" onPress={editValues} />
-      <SaveBudgetAction input={!companyLoading && !companyError ? buildSavedBudgetInput('ceiling', budget, pricing, profile, client) : null}
+      <SaveBudgetAction input={!companyLoading && !companyError ? buildSavedBudgetInput('ceiling', budget, pricing, profile, client, serviceDescription, serviceDescriptionCustomized) : null} serviceDescription={serviceDescription} serviceDescriptionCustomized={serviceDescriptionCustomized}
         unavailableMessage={companyError ? 'Não foi possível carregar os dados da empresa. Tente novamente antes de salvar.' : undefined}
         savedId={typeof orcamentoSalvoId === 'string' ? orcamentoSalvoId : undefined} />
-      <BudgetDocumentPreview source={{ service: 'ceiling', budget, materials, pricing }} client={client} savedBudgetId={typeof orcamentoSalvoId === 'string' ? orcamentoSalvoId : undefined} />
+      <BudgetDocumentPreview source={{ service: 'ceiling', budget, materials, pricing }} client={client} savedBudgetId={typeof orcamentoSalvoId === 'string' ? orcamentoSalvoId : undefined} serviceDescription={serviceDescription} />
     </BudgetScreen>
   );
 }

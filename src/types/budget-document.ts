@@ -17,5 +17,11 @@ export type DocumentRow = { label: string; value: string };
 export type BudgetDocumentData = {
   company: CompanyProfile; client: ClientData; service: BudgetDocumentSource['service']; serviceName: string;
   measurements: DocumentRow[]; configuration: DocumentRow[]; materials: DocumentRow[];
-  pricing: BudgetPricing; issueDate: string; notes: string;
+  pricing: BudgetPricing; issueDate: string; notes: string; serviceDescription: string;
+};
+
+/** Fields permitted in the customer-facing preview and exported document. */
+export type CustomerBudgetDocumentData = {
+  company: CompanyProfile; client: ClientData; serviceName: string; measurements: DocumentRow[];
+  serviceDescription: string; serviceValue: number; total: number; issueDate: string; notes: string;
 };

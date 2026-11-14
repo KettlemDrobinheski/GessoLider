@@ -60,16 +60,18 @@ export function savedBudgetEditRoute(budget: SavedBudget): Href {
       orcamento: JSON.stringify(budget.budget),
       valores: JSON.stringify(budget.pricing),
       orcamentoSalvoId: budget.id,
+      descricaoServico: budget.serviceDescription ?? '',
     },
   };
 }
 
-export function buildSavedBudgetInput(service: 'wall', budget: WallBudgetInput, pricing: BudgetPricingInput, company: CompanyProfile, client: ClientData | null): NewSavedBudget | null;
-export function buildSavedBudgetInput(service: 'ceiling', budget: CeilingBudgetInput, pricing: BudgetPricingInput, company: CompanyProfile, client: ClientData | null): NewSavedBudget | null;
-export function buildSavedBudgetInput(service: 'lining', budget: WoodWallCladdingBudgetInput, pricing: BudgetPricingInput, company: CompanyProfile, client: ClientData | null): NewSavedBudget | null;
-export function buildSavedBudgetInput(service: SavedBudget['service'], budget: SavedBudget['budget'], pricing: BudgetPricingInput, company: CompanyProfile, client: ClientData | null): NewSavedBudget | null {
+export function buildSavedBudgetInput(service: 'wall', budget: WallBudgetInput, pricing: BudgetPricingInput, company: CompanyProfile, client: ClientData | null, serviceDescription?: string, serviceDescriptionCustomized?: boolean): NewSavedBudget | null;
+export function buildSavedBudgetInput(service: 'ceiling', budget: CeilingBudgetInput, pricing: BudgetPricingInput, company: CompanyProfile, client: ClientData | null, serviceDescription?: string, serviceDescriptionCustomized?: boolean): NewSavedBudget | null;
+export function buildSavedBudgetInput(service: 'lining', budget: WoodWallCladdingBudgetInput, pricing: BudgetPricingInput, company: CompanyProfile, client: ClientData | null, serviceDescription?: string, serviceDescriptionCustomized?: boolean): NewSavedBudget | null;
+export function buildSavedBudgetInput(service: SavedBudget['service'], budget: SavedBudget['budget'], pricing: BudgetPricingInput, company: CompanyProfile, client: ClientData | null, serviceDescription?: string, serviceDescriptionCustomized?: boolean): NewSavedBudget | null {
   if (!client) return null;
-  const common = { company: { ...company }, client: { ...client }, pricing: { ...pricing } };
+  const common = { company: { ...company }, client: { ...client }, pricing: { ...pricing },
+    ...(serviceDescription === undefined ? {} : { serviceDescription, serviceDescriptionCustomized: serviceDescriptionCustomized ?? true }) };
   if (service === 'wall' && budget.measurements.service === 'wall') return { ...common, service, budget } as Extract<NewSavedBudget, { service: 'wall' }>;
   if (service === 'ceiling' && budget.measurements.service === 'ceiling') return { ...common, service, budget } as Extract<NewSavedBudget, { service: 'ceiling' }>;
   if (service === 'lining' && budget.measurements.service === 'lining') return { ...common, service, budget } as Extract<NewSavedBudget, { service: 'lining' }>;
@@ -82,6 +84,7 @@ export type SavedBudgetWriter = {
 };
 
 export function saveBudgetRecord(writer: SavedBudgetWriter, input: NewSavedBudget, savedId?: string): Promise<SavedBudget> {
-  if (savedId) return writer.update(savedId, { client: input.client, pricing: input.pricing, budget: input.budget });
+  if (savedId) return writer.update(savedId, { client: input.client, pricing: input.pricing, budget: input.budget,
+    ...(input.serviceDescription === undefined ? {} : { serviceDescription: input.serviceDescription, serviceDescriptionCustomized: input.serviceDescriptionCustomized }) });
   return writer.create(input);
 }

@@ -1,7 +1,8 @@
-import type { BudgetDocumentData, BudgetDocumentSource, DocumentRow } from '../types/budget-document';
+import type { BudgetDocumentData, BudgetDocumentSource, CustomerBudgetDocumentData, DocumentRow } from '../types/budget-document';
 import type { CompanyProfile } from '../types/company-profile';
 import type { ClientData } from '../types/client';
 import type { SavedBudget } from '../types/saved-budget';
+import { suggestServiceDescription } from './service-description';
 import { formatArea } from './measurements';
 import { toCents } from './currency';
 import { validateClient } from './client';
@@ -88,6 +89,21 @@ export function formatIssueDate(issueDate: string): string {
   return new Date(issueDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
+/** Project the internal budget into the fields allowed in customer-facing documents. */
+export function toCustomerBudgetDocument(data: BudgetDocumentData): CustomerBudgetDocumentData {
+  return {
+    company: { ...data.company },
+    client: { ...data.client },
+    serviceName: data.serviceName,
+    serviceDescription: data.serviceDescription,
+    measurements: data.measurements.map((item) => ({ ...item })),
+    serviceValue: data.pricing.total,
+    total: data.pricing.total,
+    issueDate: data.issueDate,
+    notes: data.notes,
+  };
+}
+
 export function assertBudgetDocumentData(data: BudgetDocumentData): void {
   if (!data.company.companyName.trim()) throw new Error('Informe o nome comercial nas configurações da empresa.');
   if (!data.client.name.trim()) throw new Error('Informe o nome do cliente antes de gerar o orçamento.');
@@ -107,8 +123,8 @@ export function assertBudgetDocumentData(data: BudgetDocumentData): void {
   if (!Number.isFinite(Date.parse(data.issueDate))) throw new Error('A data de emissão é inválida.');
 }
 
-export function buildBudgetDocumentData({ company, client, source, issueDate }: {
-  company: CompanyProfile; client: ClientData | null; source: BudgetDocumentSource; issueDate: string;
+export function buildBudgetDocumentData({ company, client, source, issueDate, serviceDescription }: {
+  company: CompanyProfile; client: ClientData | null; source: BudgetDocumentSource; issueDate: string; serviceDescription?: string;
 }): BudgetDocumentData {
   const validCompany = validateCompanyProfile(company).value;
   if (!validCompany) throw new Error('Revise os dados da empresa nas configurações.');
@@ -173,9 +189,13 @@ export function buildBudgetDocumentData({ company, client, source, issueDate }: 
       row('Caixa com 1.000 parafusos', quantity(result.screwBoxes, result.screwBoxes === 1 ? 'caixa' : 'caixas')),
       row('Fita para juntas', meters(result.tapeMeters)), row('Massa para juntas', `${decimal(result.compoundKg)} kg`));
   }
+  const dimensionFields = source.service === 'wall' ? { length: source.budget.measurements.length, height: source.budget.measurements.height }
+    : source.service === 'ceiling' ? { length: source.budget.measurements.length, width: source.budget.measurements.width }
+      : { width: source.budget.measurements.width, height: source.budget.measurements.height };
   const data: BudgetDocumentData = {
     company: { ...validCompany }, client: { ...validClient }, service: source.service, serviceName,
     measurements, configuration, materials, pricing: { ...source.pricing }, issueDate, notes: source.pricing.notes.trim(),
+    serviceDescription: serviceDescription ?? suggestServiceDescription(source.service, validClient, dimensionFields),
   };
   assertBudgetDocumentData(data);
   return data;
@@ -192,16 +212,16 @@ export function buildSavedBudgetDocumentData(record: SavedBudget, issueDate = re
     const materials = calculateWallMaterials({ ...record.budget.measurements, openings: [], ...record.budget.configuration });
     const pricing = calculateWallPricing(record.budget.measurements, record.pricing);
     if (materials.status !== 'valid' || !pricing) throw new Error('Os dados salvos deste orçamento não permitem gerar o documento.');
-    return buildBudgetDocumentData({ company: record.company, client: record.client, source: { service: 'wall', budget: record.budget, materials, pricing }, issueDate });
+    return buildBudgetDocumentData({ company: record.company, client: record.client, source: { service: 'wall', budget: record.budget, materials, pricing }, issueDate, serviceDescription: record.serviceDescription });
   }
   if (record.service === 'ceiling') {
     const materials = calculateCeiling({ ...record.budget.measurements, ...record.budget.configuration });
     const pricing = calculateCeilingPricing(record.budget.measurements, record.pricing);
     if (materials.status !== 'valid' || !pricing) throw new Error('Os dados salvos deste orçamento não permitem gerar o documento.');
-    return buildBudgetDocumentData({ company: record.company, client: record.client, source: { service: 'ceiling', budget: record.budget, materials, pricing }, issueDate });
+    return buildBudgetDocumentData({ company: record.company, client: record.client, source: { service: 'ceiling', budget: record.budget, materials, pricing }, issueDate, serviceDescription: record.serviceDescription });
   }
   const materials = calculateWoodWallCladding({ ...record.budget.measurements, ...record.budget.configuration });
   const pricing = calculateWoodWallCladdingPricing(record.budget.measurements, record.pricing);
   if (materials.status !== 'valid' || !pricing) throw new Error('Os dados salvos deste orçamento não permitem gerar o documento.');
-  return buildBudgetDocumentData({ company: record.company, client: record.client, source: { service: 'lining', budget: record.budget, materials, pricing }, issueDate });
+  return buildBudgetDocumentData({ company: record.company, client: record.client, source: { service: 'lining', budget: record.budget, materials, pricing }, issueDate, serviceDescription: record.serviceDescription });
 }

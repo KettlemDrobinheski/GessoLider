@@ -128,7 +128,7 @@ test('duplicates every service type without changing its original configuration 
     const repo = repository(storage, [`original-${index}`, `copy-${index}`], [
       '2026-10-01T10:00:00.000Z', '2026-10-02T10:00:00.000Z', '2026-10-03T10:00:00.000Z',
     ]);
-    const original = await repo.create(input);
+    const original = await repo.create({ ...input, serviceDescription: 'Escopo acordado com o cliente.' });
     const copy = await repo.duplicate(original.id);
     assert.equal(copy.service, original.service);
     assert.notEqual(copy.id, original.id);
@@ -137,6 +137,7 @@ test('duplicates every service type without changing its original configuration 
     assert.deepEqual(copy.budget, original.budget);
     assert.deepEqual(copy.pricing, original.pricing);
     assert.deepEqual(copy.client, original.client);
+    assert.equal(copy.serviceDescription, original.serviceDescription);
     await repo.update(copy.id, { pricing: { ...copy.pricing, notes: 'Somente na cópia' } });
     assert.deepEqual(await repo.getById(original.id), original);
   }

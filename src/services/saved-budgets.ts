@@ -35,6 +35,8 @@ function parseDraftFormData(value: unknown): Record<string, unknown> {
   const data = value as Record<string, unknown>;
   const result: Record<string, unknown> = {};
   if (data.service === 'wall' || data.service === 'ceiling' || data.service === 'lining' || data.service === 'details') result.service = data.service;
+  if (typeof data.serviceDescription === 'string') result.serviceDescription = data.serviceDescription;
+  if (typeof data.serviceDescriptionCustomized === 'boolean') result.serviceDescriptionCustomized = data.serviceDescriptionCustomized;
   if (data.clientDraft && typeof data.clientDraft === 'object' && !Array.isArray(data.clientDraft)) {
     const client = data.clientDraft as Record<string, unknown>;
     const fields = ['name', 'phone', 'cep', 'street', 'number', 'neighborhood', 'city', 'state', 'complement', 'notes'];

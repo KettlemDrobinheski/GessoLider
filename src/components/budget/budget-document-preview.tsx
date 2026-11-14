@@ -8,10 +8,11 @@ import { buildBudgetDocumentData } from '@/utils/budget-document';
 import { generateBudgetPdf, shareBudgetPdf, type GeneratedBudgetPdf } from '@/services/budget-pdf';
 import { BudgetButton, BudgetScreen } from './budget-screen';
 import { BudgetDocument } from './budget-document';
+import { getOrGenerateBudgetPdf } from '@/utils/budget-pdf-action';
 import { savedBudgetsRepository } from '@/services/saved-budgets';
 import type { CompanyProfile } from '@/types/company-profile';
 
-export function BudgetDocumentPreview({ source, client, savedBudgetId }: { source: BudgetDocumentSource; client: ClientData | null; savedBudgetId?: string }) {
+export function BudgetDocumentPreview({ source, client, savedBudgetId, serviceDescription }: { source: BudgetDocumentSource; client: ClientData | null; savedBudgetId?: string; serviceDescription?: string }) {
   const { profile, loading, loadError } = useCompanyProfile();
   const [issueDate] = useState(() => new Date().toISOString());
   const [visible, setVisible] = useState(false);
@@ -37,10 +38,10 @@ export function BudgetDocumentPreview({ source, client, savedBudgetId }: { sourc
   const result = useMemo(() => {
     try {
       if (savedBudgetId && !savedCompany) throw new Error(savedCompanyError ?? 'Carregando os dados históricos da empresa.');
-      return { data: buildBudgetDocumentData({ company: savedCompany ?? profile, client, source, issueDate }), error: null };
+      return { data: buildBudgetDocumentData({ company: savedCompany ?? profile, client, source, issueDate, serviceDescription }), error: null };
     }
     catch (error) { return { data: null, error: error instanceof Error ? error.message : 'Revise os dados do orçamento.' }; }
-  }, [profile, client, source, issueDate, savedBudgetId, savedCompany, savedCompanyError]);
+  }, [profile, client, source, issueDate, savedBudgetId, savedCompany, savedCompanyError, serviceDescription]);
   const currentProfileUnavailable = !savedBudgetId && (loading || !!loadError);
   async function generate(share: boolean) {
     if (!result.data || lock.current || currentProfileUnavailable) return;
@@ -48,9 +49,9 @@ export function BudgetDocumentPreview({ source, client, savedBudgetId }: { sourc
     setBusy(true); setFeedback('Gerando orçamento…');
     try {
       const key = JSON.stringify(result.data);
-      const pdf = generated.current?.key === key ? generated.current.pdf : await generateBudgetPdf(result.data);
-      generated.current = { key, pdf };
+      const pdf = await getOrGenerateBudgetPdf(Platform.OS, key, generated, () => generateBudgetPdf(result.data!));
       if (share) { await shareBudgetPdf(pdf); setFeedback('Opções de compartilhamento abertas.'); }
+      else if (Platform.OS === 'web') setFeedback('A impressão foi aberta. Escolha “Salvar como PDF” para baixar ou selecione uma impressora.');
       else setFeedback(`PDF gerado: ${pdf.filename}. Use Compartilhar orçamento para salvar ou enviar.`);
     } catch (error) {
       generated.current = null;
@@ -65,10 +66,10 @@ export function BudgetDocumentPreview({ source, client, savedBudgetId }: { sourc
       <SafeAreaProvider>
         <BudgetScreen title="Orçamento final" headerTitle="Pré-visualização" showBottomNavigation={false} onBack={() => { if (!lock.current) setVisible(false); }}
           footer={<View style={styles.actions}>
-            {Platform.OS === 'web' && <Text style={styles.note}>A geração e o compartilhamento do PDF estão disponíveis no aplicativo Android/iOS.</Text>}
+            {Platform.OS === 'web' && <Text style={styles.note}>Prévia para impressão. No diálogo do navegador, escolha uma impressora ou “Salvar como PDF”.</Text>}
             {!!feedback && <Text accessibilityRole="alert" style={styles.note}>{feedback}</Text>}
-            <BudgetButton label={busy ? 'Gerando orçamento…' : 'Gerar PDF'} disabled={busy || unavailable || Platform.OS === 'web'} onPress={() => { void generate(false); }} />
-            <BudgetButton label="Compartilhar orçamento" disabled={busy || unavailable || Platform.OS === 'web'} onPress={() => { void generate(true); }} />
+            <BudgetButton label={busy ? 'Preparando…' : Platform.OS === 'web' ? 'Imprimir / salvar como PDF' : 'Gerar PDF'} disabled={busy || unavailable} onPress={() => { void generate(false); }} />
+            {Platform.OS !== 'web' && <BudgetButton label="Compartilhar orçamento" disabled={busy || unavailable} onPress={() => { void generate(true); }} />}
           </View>}>
           {result.data && <BudgetDocument data={result.data} />}
         </BudgetScreen>

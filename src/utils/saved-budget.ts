@@ -57,19 +57,25 @@ export function validateSavedBudget(value: unknown): SavedBudget | null {
     const budget = parseWallBudgetInput(JSON.stringify(value.budget));
     if (!budget || !calculateWallPricing(budget.measurements, pricing)) return null;
     return { schemaVersion: savedBudgetSchemaVersion, id: value.id, createdAt: value.createdAt as string, updatedAt: value.updatedAt as string,
-      status: value.status as BudgetStatus, service: 'wall', budget, company, client, pricing };
+      status: value.status as BudgetStatus, service: 'wall', budget, company, client, pricing,
+      ...(typeof value.serviceDescription === 'string' ? { serviceDescription: value.serviceDescription,
+        serviceDescriptionCustomized: typeof value.serviceDescriptionCustomized === 'boolean' ? value.serviceDescriptionCustomized : true } : {}) };
   }
   if (value.service === 'ceiling') {
     const budget = parseCeilingBudgetInput(JSON.stringify(value.budget));
     if (!budget || !calculateCeilingPricing(budget.measurements, pricing)) return null;
     return { schemaVersion: savedBudgetSchemaVersion, id: value.id, createdAt: value.createdAt as string, updatedAt: value.updatedAt as string,
-      status: value.status as BudgetStatus, service: 'ceiling', budget, company, client, pricing };
+      status: value.status as BudgetStatus, service: 'ceiling', budget, company, client, pricing,
+      ...(typeof value.serviceDescription === 'string' ? { serviceDescription: value.serviceDescription,
+        serviceDescriptionCustomized: typeof value.serviceDescriptionCustomized === 'boolean' ? value.serviceDescriptionCustomized : true } : {}) };
   }
   if (value.service === 'lining') {
     const budget = parseWoodWallCladdingBudgetInput(JSON.stringify(value.budget));
     if (!budget || !calculateWoodWallCladdingPricing(budget.measurements, pricing)) return null;
     return { schemaVersion: savedBudgetSchemaVersion, id: value.id, createdAt: value.createdAt as string, updatedAt: value.updatedAt as string,
-      status: value.status as BudgetStatus, service: 'lining', budget, company, client, pricing };
+      status: value.status as BudgetStatus, service: 'lining', budget, company, client, pricing,
+      ...(typeof value.serviceDescription === 'string' ? { serviceDescription: value.serviceDescription,
+        serviceDescriptionCustomized: typeof value.serviceDescriptionCustomized === 'boolean' ? value.serviceDescriptionCustomized : true } : {}) };
   }
   return null;
 }

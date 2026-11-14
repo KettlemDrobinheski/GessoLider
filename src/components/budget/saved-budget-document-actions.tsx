@@ -18,7 +18,7 @@ export function SavedBudgetDocumentActions({ budget }: { budget: SavedBudget }) 
   }, [budget]);
 
   async function run(shouldShare: boolean) {
-    if (!document.data || busy || Platform.OS === 'web') return;
+    if (!document.data || busy) return;
     setBusy(true);
     setFeedback('Gerando PDF…');
     try {
@@ -26,7 +26,9 @@ export function SavedBudgetDocumentActions({ budget }: { budget: SavedBudget }) 
         generate: () => generateBudgetPdf(document.data!),
         share: shareBudgetPdf,
       });
-      if (shouldShare) {
+      if (Platform.OS === 'web') {
+        setFeedback('A impressão foi aberta. Escolha “Salvar como PDF” para baixar ou selecione uma impressora.');
+      } else if (shouldShare) {
         setFeedback('PDF pronto para compartilhar.');
       } else setFeedback(`PDF gerado: ${pdf.filename}. Use Compartilhar PDF para salvar ou enviar.`);
     } catch (error) {
@@ -37,16 +39,16 @@ export function SavedBudgetDocumentActions({ budget }: { budget: SavedBudget }) 
   return <>
     {!!document.error && <Text accessibilityRole="alert" style={styles.note}>{document.error}</Text>}
     <BudgetButton label={savedBudgetPdfActionLabels[0]} disabled={!document.data} onPress={() => { setFeedback(null); setVisible(true); }} />
-    <BudgetButton label={busy ? 'Gerando PDF…' : savedBudgetPdfActionLabels[1]} disabled={busy || !document.data || Platform.OS === 'web'} onPress={() => { void run(false); }} />
-    <BudgetButton label={savedBudgetPdfActionLabels[2]} disabled={busy || !document.data || Platform.OS === 'web'} onPress={() => { void run(true); }} />
+    {Platform.OS !== 'web' && <BudgetButton label={busy ? 'Gerando PDF…' : savedBudgetPdfActionLabels[1]} disabled={busy || !document.data} onPress={() => { void run(false); }} />}
+    {Platform.OS !== 'web' && <BudgetButton label={savedBudgetPdfActionLabels[2]} disabled={busy || !document.data} onPress={() => { void run(true); }} />}
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setVisible(false)}>
       <SafeAreaProvider>
         <BudgetScreen title="Orçamento" headerTitle="Pré-visualização" showBottomNavigation={false} onBack={() => setVisible(false)}
           footer={<View style={styles.footer}>
-            {Platform.OS === 'web' && <Text style={styles.note}>A geração e o compartilhamento de PDF estão disponíveis no aplicativo Android/iOS.</Text>}
+            {Platform.OS === 'web' && <Text style={styles.note}>Prévia para impressão. No diálogo do navegador, escolha uma impressora ou “Salvar como PDF”.</Text>}
             {!!feedback && <Text accessibilityRole="alert" style={styles.note}>{feedback}</Text>}
-            <BudgetButton label={busy ? 'Gerando PDF…' : 'Gerar PDF'} disabled={busy || !document.data || Platform.OS === 'web'} onPress={() => { void run(false); }} />
-            <BudgetButton label="Compartilhar PDF" disabled={busy || !document.data || Platform.OS === 'web'} onPress={() => { void run(true); }} />
+            <BudgetButton label={busy ? 'Preparando…' : Platform.OS === 'web' ? 'Imprimir / salvar como PDF' : 'Gerar PDF'} disabled={busy || !document.data} onPress={() => { void run(false); }} />
+            {Platform.OS !== 'web' && <BudgetButton label="Compartilhar PDF" disabled={busy || !document.data} onPress={() => { void run(true); }} />}
           </View>}>
           {document.data && <BudgetDocument data={document.data} />}
         </BudgetScreen>

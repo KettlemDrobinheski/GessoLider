@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import './register-typescript.mjs';
 import { documentFixtures } from './budget-document-fixtures.mjs';
-const { buildBudgetDocumentData, assertBudgetDocumentData, budgetPdfFilename, formatIssueDate } = await import('../src/utils/budget-document.ts');
+const { buildBudgetDocumentData, assertBudgetDocumentData, budgetPdfFilename, formatIssueDate, toCustomerBudgetDocument } = await import('../src/utils/budget-document.ts');
+const { suggestServiceDescription } = await import('../src/utils/service-description.ts');
 const { buildBudgetPdfHtml, escapeHtml } = await import('../src/services/budget-pdf-template.ts');
 const { formatClientAddress } = await import('../src/utils/client.ts');
 const { formatBRL } = await import('../src/utils/currency.ts');
@@ -28,17 +29,16 @@ test('wall document includes its calculated structure, insulation and acoustic b
   assert.equal(data.materials[0].value, '11 placas');
   assert.ok(!labels.includes('F530'));
 });
-test('wall document includes the screen estimates without duplicating the general notice', () => {
+test('wall document retains internal estimates and hides them from the customer PDF', () => {
   const data = document();
   const configuration = Object.fromEntries(data.configuration.map(({ label, value }) => [label, value]));
   assert.equal(configuration['Estimativa das guias'], 'As guias são estimadas pela metragem total, sem plano de corte das peças.');
   assert.equal(configuration['Premissa do isolamento'], 'Área interna da parede, sem conversão para rolos, pacotes ou placas.');
   assert.equal(configuration['Premissa da banda acústica'], 'Estimativa por área, sem levantamento linear detalhado dos encontros da parede.');
   const html = buildBudgetPdfHtml(data);
-  for (const notice of Object.values(configuration).filter((value) => /estimadas pela metragem|conversão para rolos|levantamento linear/.test(value))) {
-    assert.equal(html.split(notice).length - 1, 1);
-  }
-  assert.equal(html.split(materialEstimateNotice).length - 1, 1);
+  assert.ok(Object.values(configuration).some((value) => /estimadas pela metragem/.test(value)));
+  assert.ok(!html.includes('Estimativa das guias'));
+  assert.ok(!html.includes(materialEstimateNotice));
 });
 test('wall document includes insulation and acoustic band notices only when selected', () => {
   const fixture = documentFixtures();
@@ -78,7 +78,7 @@ test('ceiling document includes F530 and angles and no wall-only materials', () 
     assert.ok(configuration['Acessórios não incluídos'].includes(accessory), accessory);
   }
 });
-test('ceiling PDF includes its orientation, segment estimate and excluded accessories once', () => {
+test('ceiling PDF hides internal orientation, estimates and accessories configuration', () => {
   const data = document(1);
   const html = buildBudgetPdfHtml(data);
   for (const notice of [
@@ -88,11 +88,7 @@ test('ceiling PDF includes its orientation, segment estimate and excluded access
     'não calcula o aproveitamento real das sobras',
     'não inclui acessórios de suspensão e ancoragem',
     'tirantes, presilhas, reguladores, conectores, buchas e fixadores',
-  ]) assert.ok(html.includes(notice), notice);
-  assert.equal(html.split('não inclui acessórios de suspensão e ancoragem').length - 1, 1);
-  for (const { value } of data.configuration.filter(({ label }) => ['Orientação estimada de F530', 'Premissa de F530 e cantoneiras', 'Acessórios não incluídos'].includes(label))) {
-    assert.equal(html.split(value).length - 1, 1, value);
-  }
+  ]) assert.ok(!html.includes(notice), notice);
   for (const index of [0, 2]) {
     const otherServiceHtml = buildBudgetPdfHtml(document(index));
     assert.ok(!otherServiceHtml.includes('Orientação estimada de F530'));
@@ -155,32 +151,56 @@ test('reuses existing address formatting', () => {
   const data = document();
   for (const line of formatClientAddress(data.client)) assert.ok(buildBudgetPdfHtml(data).includes(escapeHtml(line)));
 });
-test('each service renders the same template containing company, client, service and total', () => {
+test('each service renders customer data and total without internal cost or material composition', () => {
   for (let i = 0; i < 3; i++) {
     const data = document(i);
     const html = buildBudgetPdfHtml(data);
-    for (const value of [data.company.companyName, data.client.name, data.serviceName, formatBRL(data.pricing.total), 'ORÇAMENTO', 'Materiais estimados']) assert.ok(html.includes(escapeHtml(value)), value);
+    for (const value of [data.company.companyName, data.client.name, data.serviceName, formatBRL(data.pricing.total), 'ORÇAMENTO', 'Valor do serviço', 'TOTAL GERAL']) assert.ok(html.includes(escapeHtml(value)), value);
     assert.match(html, /size: A4 portrait/);
     assert.match(html, /table-header-group/);
-    for (const { label, value } of [...data.measurements, ...data.configuration, ...data.materials]) {
+    for (const { label, value } of data.measurements) {
       const row = `<tr><td>${escapeHtml(label)}</td><td class="value">${escapeHtml(value)}</td></tr>`;
       assert.ok(html.includes(row), `${data.service}: ${label} / ${value}`);
     }
-    for (const value of [formatBRL(data.pricing.materialsTotal), formatBRL(data.pricing.laborTotal), formatBRL(data.pricing.total)]) {
-      assert.ok(html.includes(escapeHtml(value)), `${data.service}: ${value}`);
+    for (const { label, value } of [...data.configuration, ...data.materials]) {
+      assert.ok(!html.includes(escapeHtml(label)), `${data.service}: hidden label ${label}`);
+      assert.ok(!html.includes(escapeHtml(value)), `${data.service}: hidden value ${value}`);
     }
+    assert.ok(!html.includes(formatBRL(data.pricing.materialsTotal)));
+    assert.ok(!html.includes(formatBRL(data.pricing.laborTotal)));
+    assert.equal(html.split(formatBRL(data.pricing.total)).length - 1, 2);
   }
 });
-test('includes the complete materials estimate notice once for each service', () => {
+test('customer projection contains no internal composition and preserves the calculated total', () => {
   for (let i = 0; i < 3; i++) {
-    const html = buildBudgetPdfHtml(document(i));
-    assert.ok(html.includes(escapeHtml(materialEstimateNotice)));
-    assert.equal(html.split(escapeHtml(materialEstimateNotice)).length - 1, 1);
+    const data = document(i);
+    const customerDocument = toCustomerBudgetDocument(data);
+    const html = buildBudgetPdfHtml(data);
+    assert.equal(customerDocument.total, data.pricing.total);
+    assert.equal(customerDocument.serviceValue, data.pricing.total);
+    assert.ok(!('materials' in customerDocument));
+    assert.ok(!('configuration' in customerDocument));
+    assert.ok(!('pricing' in customerDocument));
+    assert.ok(!html.includes('Materiais estimados'));
+    assert.ok(!html.includes('Valor dos materiais'));
+    assert.ok(!html.includes('Mão de obra'));
+    assert.ok(!html.includes(escapeHtml(materialEstimateNotice)));
   }
-  assert.match(materialEstimateNotice, /placas são calculadas pela área/);
-  assert.match(materialEstimateNotice, /sem paginação ou aproveitamento real dos recortes/);
-  assert.match(materialEstimateNotice, /Cortes, emendas e condições de instalação/);
-  assert.match(materialEstimateNotice, /antes da compra e da execução/);
+});
+test('service description suggestions use only selected service, known dimensions and available location', () => {
+  const fixture = documentFixtures();
+  assert.match(suggestServiceDescription('wall', fixture.client, { length: 4, height: 2.7 }), /parede de drywall.*4 m.*2.7 m.*Rua das Flores/);
+  assert.equal(suggestServiceDescription('ceiling'), 'Execução de forro de drywall.');
+  const custom = 'Instalação conforme alinhado com o cliente.';
+  const data = buildBudgetDocumentData({ ...fixture, source: fixture.sources[0], serviceDescription: custom });
+  assert.equal(data.serviceDescription, custom);
+  assert.equal(toCustomerBudgetDocument(data).serviceDescription, custom);
+  assert.equal(toCustomerBudgetDocument(data).total, data.pricing.total);
+  const html = buildBudgetPdfHtml(data);
+  assert.ok(html.includes('Descrição dos Serviços Contratados'));
+  assert.ok(html.includes(custom));
+  assert.ok(!html.includes('Valor dos materiais'));
+  assert.ok(!html.includes('Mão de obra'));
 });
 test('commercial observation appears exactly once at the document end', () => {
   const data = document(); data.company.commercialNote = 'Sujeito à vistoria técnica.';
@@ -192,7 +212,7 @@ test('escapes user data in names, addresses, notes and material text', () => {
   const data = document();
   const input = '<script>alert("x")</script> & \'teste\'';
   data.company.companyName = input; data.client.name = input; data.client.street = input;
-  data.client.notes = input; data.notes = input; data.company.commercialNote = input; data.materials[0].label = input;
+  data.client.notes = input; data.notes = input; data.company.commercialNote = input;
   const html = buildBudgetPdfHtml(data);
   assert.ok(!html.includes('<script>'));
   assert.ok(html.includes('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; &#39;teste&#39;'));
