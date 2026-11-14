@@ -41,8 +41,9 @@ export function BudgetDocumentPreview({ source, client, savedBudgetId }: { sourc
     }
     catch (error) { return { data: null, error: error instanceof Error ? error.message : 'Revise os dados do orçamento.' }; }
   }, [profile, client, source, issueDate, savedBudgetId, savedCompany, savedCompanyError]);
+  const currentProfileUnavailable = !savedBudgetId && (loading || !!loadError);
   async function generate(share: boolean) {
-    if (!result.data || lock.current || loading || loadError) return;
+    if (!result.data || lock.current || currentProfileUnavailable) return;
     lock.current = true;
     setBusy(true); setFeedback('Gerando orçamento…');
     try {
@@ -56,13 +57,13 @@ export function BudgetDocumentPreview({ source, client, savedBudgetId }: { sourc
       setFeedback(error instanceof Error ? error.message : 'Não foi possível concluir a ação. Tente novamente.');
     } finally { lock.current = false; setBusy(false); }
   }
-  const unavailable = loading || !!loadError || savedCompanyLoading || !!savedCompanyError || !result.data;
+  const unavailable = currentProfileUnavailable || savedCompanyLoading || !!savedCompanyError || !result.data;
   return <>
-    {(result.error || loadError) && <Text accessibilityRole="alert" style={styles.note}>{loadError || result.error}</Text>}
+    {(result.error || (!savedBudgetId && loadError)) && <Text accessibilityRole="alert" style={styles.note}>{(!savedBudgetId && loadError) || result.error}</Text>}
     <BudgetButton label="Visualizar orçamento final" disabled={unavailable} onPress={() => { setFeedback(null); setVisible(true); }} />
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => { if (!lock.current) setVisible(false); }}>
       <SafeAreaProvider>
-        <BudgetScreen title="Orçamento final" headerTitle="Pré-visualização" onBack={() => { if (!lock.current) setVisible(false); }}
+        <BudgetScreen title="Orçamento final" headerTitle="Pré-visualização" showBottomNavigation={false} onBack={() => { if (!lock.current) setVisible(false); }}
           footer={<View style={styles.actions}>
             {Platform.OS === 'web' && <Text style={styles.note}>A geração e o compartilhamento do PDF estão disponíveis no aplicativo Android/iOS.</Text>}
             {!!feedback && <Text accessibilityRole="alert" style={styles.note}>{feedback}</Text>}

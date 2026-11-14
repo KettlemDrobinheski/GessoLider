@@ -7,12 +7,13 @@ import { Brand } from '@/constants/brand';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { BudgetSteps } from './budget-steps';
 import { DraftSaveStatus } from '@/hooks/use-budget-draft';
+import { BottomBar } from '@/components/home/bottom-bar';
 
 type Props = PropsWithChildren<{
-  title: string; subtitle?: string; activeStep?: 2 | 3 | 4 | 'client'; headerTitle?: string; onBack: () => void; footer?: ReactNode; keyboard?: boolean;
+  title: string; subtitle?: string; activeStep?: 2 | 3 | 4 | 'client'; headerTitle?: string; onBack: () => void; footer?: ReactNode; keyboard?: boolean; showBottomNavigation?: boolean;
 }>;
 
-export function BudgetScreen({ title, subtitle, activeStep, headerTitle = 'Novo Orçamento', onBack, footer, keyboard = false, children }: Props) {
+export function BudgetScreen({ title, subtitle, activeStep, headerTitle = 'Novo Orçamento', onBack, footer, keyboard = false, showBottomNavigation = activeStep === undefined, children }: Props) {
   const { maxContentWidth, horizontalPadding } = useResponsiveLayout();
   return (
     <SafeAreaView style={styles.screen}>
@@ -38,6 +39,7 @@ export function BudgetScreen({ title, subtitle, activeStep, headerTitle = 'Novo 
         </ScrollView>
         {!!footer && <View style={[styles.footer, { maxWidth: maxContentWidth, paddingHorizontal: horizontalPadding }]}>{footer}</View>}
       </KeyboardAvoidingView>
+      {showBottomNavigation && <BottomBar />}
     </SafeAreaView>
   );
 }

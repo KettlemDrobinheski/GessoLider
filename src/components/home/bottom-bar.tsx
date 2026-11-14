@@ -15,13 +15,13 @@ export function BottomBar() {
   const { maxContentWidth } = useResponsiveLayout();
 
   return (
-    <View style={styles.bar}>
+    <View accessibilityRole="tablist" accessibilityLabel="Navegação principal" style={styles.bar}>
       <View style={[styles.content, { maxWidth: maxContentWidth }]}>
         {items.map((item) => {
-          const selected = pathname === item.href;
+          const selected = pathname === item.href || (item.href === '/orcamentos' && pathname.startsWith('/orcamentos/'));
           return (
             <Link key={item.href} href={item.href} asChild>
-              <Pressable accessibilityLabel={item.label} accessibilityState={{ selected }}
+              <Pressable accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected }}
                 style={({ pressed }) => [styles.item, pressed && styles.pressed]}>
                 <View style={[styles.icon, selected && styles.selected]}>
                   <SymbolView name={item.icon} size={23} tintColor={selected ? Brand.primary : '#60706A'} />

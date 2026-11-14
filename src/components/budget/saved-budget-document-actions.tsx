@@ -41,7 +41,7 @@ export function SavedBudgetDocumentActions({ budget }: { budget: SavedBudget }) 
     <BudgetButton label={savedBudgetPdfActionLabels[2]} disabled={busy || !document.data || Platform.OS === 'web'} onPress={() => { void run(true); }} />
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setVisible(false)}>
       <SafeAreaProvider>
-        <BudgetScreen title="Orçamento" headerTitle="Pré-visualização" onBack={() => setVisible(false)}
+        <BudgetScreen title="Orçamento" headerTitle="Pré-visualização" showBottomNavigation={false} onBack={() => setVisible(false)}
           footer={<View style={styles.footer}>
             {Platform.OS === 'web' && <Text style={styles.note}>A geração e o compartilhamento de PDF estão disponíveis no aplicativo Android/iOS.</Text>}
             {!!feedback && <Text accessibilityRole="alert" style={styles.note}>{feedback}</Text>}
