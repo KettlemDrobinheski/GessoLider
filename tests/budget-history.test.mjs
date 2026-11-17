@@ -5,7 +5,7 @@ import { documentFixtures } from './budget-document-fixtures.mjs';
 
 const { createSavedBudgetsRepository } = await import('../src/services/saved-budgets.ts');
 const { buildSavedBudgetInput, budgetHistoryState, formatBudgetHistoryDate, savedBudgetAmountLabel,
-  savedBudgetDetailsRoute, savedBudgetEditRoute, savedBudgetServiceLabels, savedBudgetStatusLabels, saveBudgetRecord } = await import('../src/utils/budget-history.ts');
+  savedBudgetDetailsId, savedBudgetDetailsRoute, savedBudgetEditRoute, savedBudgetServiceLabels, savedBudgetStatusLabels, saveBudgetRecord } = await import('../src/utils/budget-history.ts');
 const { parseWallBudgetInput } = await import('../src/utils/wall-configuration.ts');
 const { parseCeilingBudgetInput } = await import('../src/utils/ceiling.ts');
 const { parseWoodWallCladdingBudgetInput } = await import('../src/utils/wood-wall-cladding.ts');
@@ -74,7 +74,27 @@ test('formats visible history fields and creates details navigation by persisted
   assert.deepEqual(Object.values(savedBudgetStatusLabels), ['Rascunho', 'Enviado', 'Aprovado', 'Rejeitado', 'Concluído']);
   assert.equal(formatBudgetHistoryDate(record.updatedAt), '08/10/2026');
   assert.equal(savedBudgetAmountLabel(record).replace('\u00a0', ' '), 'R$ 2.200,00');
-  assert.deepEqual(savedBudgetDetailsRoute(record.id), { pathname: '/orcamentos/[id]', params: { id: 'persisted-id' } });
+  assert.deepEqual(savedBudgetDetailsRoute(record.id), { pathname: '/orcamentos/detalhes', params: { id: 'persisted-id' } });
+});
+
+test('builds a static details URL with the saved ID in the query and reloads that record', async () => {
+  const storage = memoryStorage();
+  const repository = createSavedBudgetsRepository(storage, { createId: () => 'existing-budget-id' });
+  const source = sources()[0];
+  const saved = await repository.create(buildSavedBudgetInput(source.service, source.budget, source.pricing, source.company, source.client));
+  const route = savedBudgetDetailsRoute(saved.id);
+  assert.equal(route.pathname, '/orcamentos/detalhes');
+  assert.equal(savedBudgetDetailsId(route.params.id), saved.id);
+
+  const reopenedRepository = createSavedBudgetsRepository(storage);
+  assert.deepEqual(await reopenedRepository.getById(savedBudgetDetailsId(route.params.id)), saved);
+});
+
+test('rejects missing or repeated static detail IDs without changing valid IDs', () => {
+  assert.equal(savedBudgetDetailsId(undefined), null);
+  assert.equal(savedBudgetDetailsId(''), null);
+  assert.equal(savedBudgetDetailsId(['one', 'two']), null);
+  assert.equal(savedBudgetDetailsId('budget/id?legacy'), 'budget/id?legacy');
 });
 
 test('opens each saved service with validated inputs and persists edits under the same ID', async () => {

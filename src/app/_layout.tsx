@@ -31,6 +31,7 @@ function RootStack() {
         <Stack.Screen name="home" />
         <Stack.Screen name="explore" />
         <Stack.Screen name="orcamentos/index" />
+        <Stack.Screen name="orcamentos/detalhes" />
         <Stack.Screen name="orcamentos/[id]" />
         <Stack.Screen name="configuracoes/empresa" />
         <Stack.Screen name="orcamento/tipo-servico" />

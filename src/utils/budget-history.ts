@@ -49,7 +49,11 @@ export function budgetHistoryState(budgets: SavedBudget[], loading: boolean, err
 }
 
 export function savedBudgetDetailsRoute(id: string): Href {
-  return { pathname: '/orcamentos/[id]' as const, params: { id } } as unknown as Href;
+  return { pathname: '/orcamentos/detalhes' as const, params: { id } } as unknown as Href;
+}
+
+export function savedBudgetDetailsId(value: string | string[] | undefined): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
 export function savedBudgetEditRoute(budget: SavedBudget): Href {
