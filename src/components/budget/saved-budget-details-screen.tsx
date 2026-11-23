@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   error: { color: '#A33232', fontSize: 13, lineHeight: 20 },
   success: { color: '#087354', fontSize: 13, lineHeight: 20 },
   statusOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 8 },
-  statusOption: { minHeight: 42, paddingHorizontal: 12, paddingVertical: 9, justifyContent: 'center', borderRadius: 12, borderWidth: 1, borderColor: '#C5CECA', backgroundColor: '#FFFFFF' },
+  statusOption: { minHeight: 44, paddingHorizontal: 12, paddingVertical: 9, justifyContent: 'center', borderRadius: 12, borderWidth: 1, borderColor: '#C5CECA', backgroundColor: '#FFFFFF' },
   statusOptionSelected: { borderColor: '#087354', backgroundColor: '#087354' },
   statusOptionText: { color: '#24352E', fontSize: 13, fontWeight: '600' },
   statusOptionTextSelected: { color: '#FFFFFF' },

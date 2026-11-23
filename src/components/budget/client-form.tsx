@@ -5,6 +5,7 @@ import { emptyClient, formatCep, formatPhone, validateClient } from '@/utils/cli
 import { Brand } from '@/constants/brand';
 import { BudgetButton, BudgetScreen } from './budget-screen';
 import { BudgetCard } from './budget-card';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
 const fields: { key: keyof ClientData; label: string; keyboard?: 'phone-pad' | 'number-pad'; multiline?: boolean }[] = [
   { key: 'name', label: 'Nome do cliente *' }, { key: 'phone', label: 'Telefone (opcional)', keyboard: 'phone-pad' },
@@ -18,6 +19,7 @@ export function ClientForm({ initialClient, onBack, onContinue, onDraftChange }:
   initialClient: ClientData | null; onBack: () => void; onContinue: (client: ClientData) => void | Promise<void>;
   onDraftChange?: (client: ClientData) => void;
 }) {
+  const { isWide } = useResponsiveLayout();
   const [draft, setDraft] = useState<ClientData>(() => ({
     ...(initialClient ?? emptyClient), phone: formatPhone(initialClient?.phone ?? ''), cep: formatCep(initialClient?.cep ?? ''),
   }));
@@ -36,32 +38,39 @@ export function ClientForm({ initialClient, onBack, onContinue, onDraftChange }:
   return (
     <BudgetScreen title="Dados do Cliente" subtitle="Informe o cliente e o endereço da obra. Apenas o nome é obrigatório." activeStep="client" onBack={onBack} keyboard
       footer={<BudgetButton label={saving ? 'Salvando…' : 'Continuar'} disabled={!validation.value || saving} onPress={() => { void next(); }} />}>
-      <BudgetCard title="Cliente e obra">
-        {!!saveError && <Text accessibilityRole="alert" style={styles.error}>{saveError}</Text>}
-        {fields.map(({ key, label, keyboard, multiline }) => {
-          const error = touched[key] || draft[key].length > 0 ? validation.errors[key] : undefined;
-          return <View key={key} style={styles.field}>
-            <Text style={styles.label}>{label}</Text>
-            <TextInput accessibilityLabel={label} aria-invalid={!!error} aria-describedby={error ? `client-${key}-error` : undefined}
-              value={draft[key]} editable={!saving} keyboardType={keyboard} multiline={multiline}
-              autoCapitalize={key === 'state' ? 'characters' : key === 'notes' ? 'sentences' : 'words'}
-              onBlur={() => setTouched((current) => ({ ...current, [key]: true }))}
-              onChangeText={(text) => {
-                const next = { ...draft, [key]: key === 'phone' ? formatPhone(text) : key === 'cep' ? formatCep(text) : text };
-                setDraft(next);
-                onDraftChange?.(next);
-              }}
-              style={[styles.input, multiline && styles.notes, !!error && styles.invalid]} textAlignVertical={multiline ? 'top' : 'center'} />
-            {!!error && <Text nativeID={`client-${key}-error`} style={styles.error}>{error}</Text>}
-          </View>;
-        })}
-      </BudgetCard>
+      <View style={styles.form}>
+        <BudgetCard title="Cliente e obra">
+          {!!saveError && <Text accessibilityRole="alert" style={styles.error}>{saveError}</Text>}
+          <View style={[styles.fields, isWide && styles.fieldsWide]}>
+            {fields.map(({ key, label, keyboard, multiline }) => {
+              const error = touched[key] || draft[key].length > 0 ? validation.errors[key] : undefined;
+              return <View key={key} style={[styles.field, isWide && styles.fieldWide, isWide && multiline && styles.fieldFull]}>
+                <Text style={styles.label}>{label}</Text>
+                <TextInput accessibilityLabel={label} aria-invalid={!!error} aria-describedby={error ? `client-${key}-error` : undefined}
+                  value={draft[key]} editable={!saving} keyboardType={keyboard} multiline={multiline}
+                  autoCapitalize={key === 'state' ? 'characters' : key === 'notes' ? 'sentences' : 'words'}
+                  onBlur={() => setTouched((current) => ({ ...current, [key]: true }))}
+                  onChangeText={(text) => {
+                    const next = { ...draft, [key]: key === 'phone' ? formatPhone(text) : key === 'cep' ? formatCep(text) : text };
+                    setDraft(next);
+                    onDraftChange?.(next);
+                  }}
+                  style={[styles.input, multiline && styles.notes, !!error && styles.invalid]} textAlignVertical={multiline ? 'top' : 'center'} />
+                {!!error && <Text nativeID={`client-${key}-error`} style={styles.error}>{error}</Text>}
+              </View>;
+            })}
+          </View>
+        </BudgetCard>
+      </View>
     </BudgetScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  field: { gap: 8 }, label: { color: Brand.dark, fontSize: 15, fontWeight: '600' },
+  form: { width: '100%', maxWidth: 900, alignSelf: 'center' },
+  fields: { gap: 16 }, fieldsWide: { flexDirection: 'row', flexWrap: 'wrap' },
+  field: { gap: 8 }, fieldWide: { flexGrow: 1, flexBasis: '46%' }, fieldFull: { width: '100%', flexBasis: '100%' },
+  label: { color: Brand.dark, fontSize: 15, fontWeight: '600' },
   input: { minHeight: 54, borderWidth: 1.5, borderColor: '#C5CECA', borderRadius: 12, padding: 14, fontSize: 16, color: Brand.dark },
   notes: { minHeight: 120 }, invalid: { borderColor: '#A33232' }, error: { color: '#A33232', fontSize: 12, lineHeight: 18 },
 });

@@ -1,4 +1,5 @@
-﻿import { Stack } from 'expo-router';
+﻿import '@/global.css';
+import { Stack } from 'expo-router';
 
 import { CompanyProfileProvider } from '@/hooks/use-company-profile';
 import { LocalAccessProvider, useLocalAccess } from '@/hooks/use-local-access';
