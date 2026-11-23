@@ -78,7 +78,7 @@ function CompanyForm({ initialProfile, onBack }: { initialProfile: CompanyProfil
 
 const styles = StyleSheet.create({
   fields: { gap: 16 }, fieldsWide: { flexDirection: 'row', flexWrap: 'wrap' },
-  field: { gap: 8 }, fieldWide: { width: '47%' }, fieldFull: { width: '100%' },
+  field: { gap: 8 }, fieldWide: { flexGrow: 1, flexBasis: '46%' }, fieldFull: { width: '100%', flexBasis: '100%' },
   label: { color: Brand.dark, fontSize: 15, fontWeight: '600' }, text: { color: Brand.dark, fontSize: 14, lineHeight: 22 },
   input: { minHeight: 54, borderWidth: 1.5, borderColor: '#C5CECA', borderRadius: 12, padding: 14, fontSize: 16, color: Brand.dark },
   notes: { minHeight: 120 }, invalid: { borderColor: '#A33232' }, error: { color: '#A33232', fontSize: 13, lineHeight: 20 },
