@@ -1,56 +1,134 @@
-# Welcome to your Expo app 👋
+# GessoLider
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+### Sistema de Orçamentos para Construção a Seco
 
-## Get started
+**React Native · Expo · TypeScript · Expo Router**
 
-1. Install dependencies
+O **GessoLider** é uma aplicação desenvolvida para facilitar a elaboração, o cálculo e o gerenciamento de orçamentos para serviços de construção a seco, especialmente drywall.
 
-   ```bash
-   npm install
-   ```
+O projeto nasceu de uma necessidade real: ajudar meu pai, que trabalha no setor, a organizar e preparar seus orçamentos de maneira mais prática e eficiente.
 
-2. Start the app
+Inicialmente pensado para uso familiar, o GessoLider está sendo desenvolvido com a intenção de, futuramente, atender também outros gesseiros e profissionais da construção a seco.
 
-   ```bash
-   npx expo start
-   ```
+**Status:** Em desenvolvimento
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Objetivo do projeto
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Simplificar o processo de elaboração de orçamentos, reduzir tarefas repetitivas e organizar as informações necessárias para a prestação de serviços.
 
-## Get a fresh project
+A aplicação busca oferecer uma experiência prática, desde o preenchimento das medidas até a geração do documento final para o cliente.
 
-When you're ready, run:
+## Funcionalidades implementadas
+
+- Criação de orçamentos com base nas medidas dos serviços.
+- Estimativa de materiais necessários.
+- Cálculo e organização dos valores dos orçamentos.
+- Cadastro de informações dos clientes.
+- Histórico de orçamentos salvos.
+- Edição, duplicação e exclusão de orçamentos.
+- Acompanhamento do status dos orçamentos.
+- Geração e exportação de documentos em PDF.
+- Separação entre informações internas de materiais e informações apresentadas ao cliente.
+- Armazenamento local dos dados.
+
+## Tecnologias utilizadas
+
+| Tecnologia | Aplicação no projeto |
+|---|---|
+| React Native | Construção da interface com componentes reutilizáveis |
+| Expo | Estrutura e ferramentas de desenvolvimento |
+| TypeScript | Tipagem e organização do código |
+| Expo Router | Navegação entre as telas |
+| AsyncStorage | Persistência local de informações |
+| Node.js (`node:test`) | Execução de testes automatizados |
+| GitHub Actions | Automação dos testes e da publicação Web |
+
+## Demonstração do sistema
+
+A documentação visual do projeto apresenta sete etapas do funcionamento:
+
+1. Apresentação do aplicativo.
+2. Dashboard.
+3. Criação de orçamento.
+4. Cálculo de materiais.
+5. Histórico de orçamentos.
+6. Detalhes do orçamento.
+7. Visualização do PDF gerado.
+
+As capturas utilizam dados fictícios e demonstram funcionalidades reais da aplicação.
+
+## Desafios técnicos
+
+### Navegação na versão Web
+
+Um dos desafios foi adaptar a navegação da aplicação para funcionar em ambientes de publicação estática, incluindo a abertura de detalhes de orçamentos.
+
+Essa etapa envolveu analisar rotas, identificar incompatibilidades e testar alternativas.
+
+### Geração de PDF
+
+Outro desafio foi implementar a geração de documentos para os clientes, preservando a separação entre os cálculos internos e as informações comerciais apresentadas no orçamento final.
+
+### Publicação e validação
+
+Durante a preparação para o GitHub Pages, também foi necessário investigar diferenças entre o ambiente local e o GitHub Actions, especialmente no reconhecimento de imports CSS pelo TypeScript.
+
+## Aprendizados
+
+O desenvolvimento do GessoLider tem me ajudado a compreender melhor a organização de componentes, a separação de responsabilidades, a validação de informações e a importância dos testes.
+
+Também venho aprendendo a desenvolver funcionalidades passo a passo, identificar problemas, revisar detalhes e melhorar continuamente a experiência de utilização.
+
+Utilizo ferramentas de inteligência artificial como apoio para pesquisa, aprendizado, revisão e desenvolvimento, buscando compreender as soluções aplicadas ao projeto.
+
+## Próximos passos
+
+- Implementar um backend para armazenamento centralizado.
+- Adicionar autenticação e controle de acesso.
+- Preparar o sistema para diferentes usuários.
+- Expandir a utilização para outros profissionais da construção a seco.
+- Continuar aprimorando a experiência Web e mobile.
+
+## Executando localmente
+
+**Pré-requisito:** Node.js e npm instalados.
+
+Clone o repositório:
 
 ```bash
-npm run reset-project
+git clone https://github.com/KettlemDrobinheski/GessoLider.git
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Entre na pasta:
 
-### Other setup steps
+```bash
+cd GessoLider
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Instale as dependências:
 
-## Learn more
+```bash
+npm ci
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Inicie a aplicação Web:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npx expo start --web
+```
 
-## Join the community
+Abra o endereço local informado pelo terminal.
 
-Join our community of developers creating universal apps.
+## 👩‍💻 Desenvolvimento
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+**Kettlem Drobinheski**
+
+Estudante de Análise e Desenvolvimento de Sistemas, com interesse em desenvolvimento de software, resolução de problemas e criação de soluções para necessidades reais.
+
+[Meu GitHub](https://github.com/KettlemDrobinheski)
+
+---
+
+**GessoLider — Transformando necessidades reais em soluções tecnológicas.**
