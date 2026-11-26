@@ -34,6 +34,7 @@
       "expo-sharing"
     ],
     "experiments": {
+      "baseUrl": "/GessoLider",
       "typedRoutes": true,
       "reactCompiler": true
     }
